@@ -1,13 +1,130 @@
 /**
  * Turns a merged PR into the Slack message the team actually needs to see.
  *
- * The point of this file is the routing table below. A notification that fires on
- * every merge gets muted in a week, so the folder a change landed in decides whether
- * anyone hears about it. That mapping is the same one the kit's CLAUDE.md files
- * describe — stable context up top, raw material in comms/, project work in
- * deliverables/ — which is what makes the summary readable to someone who will
- * never open the repo.
+ * Two things are going on here.
+ *
+ * The routing table decides *whether* anyone hears about a merge. A notification that
+ * fires on every one gets muted in a week, so the folder a change landed in carries
+ * that decision — the same mapping the kit's CLAUDE.md files already describe.
+ *
+ * The detail extractors decide *what* the message says. "A decision landed" is a
+ * filing cabinet sound; it tells a reader they have to go look. So each route knows
+ * how to read its own file shape out of the diff — a decision's title and status, the
+ * bold clause of a new constraint, which sources joined the manifest. That only works
+ * because these files have a predictable shape, which is the argument for the shape.
+ *
+ * No model runs here. Everything below is pulled straight out of the patch, so the
+ * message can't hallucinate and can't be slow.
  */
+
+// ---------------------------------------------------------------- reading a patch
+
+/** Lines a patch added, without the leading "+". */
+function addedLines(item) {
+  return (item.patch ?? '')
+    .split('\n')
+    .filter((l) => l.startsWith('+') && !l.startsWith('+++'))
+    .map((l) => l.slice(1))
+}
+
+const addedText = (items) => items.flatMap(addedLines).join('\n')
+
+/** First match of `re` across everything the merge added. */
+function firstMatch(items, re) {
+  const m = addedText(items).match(re)
+  return m ? m[1].trim() : null
+}
+
+/** Trim to a length Slack won't wrap into a wall. Breaks on a word. */
+function clip(s, max = 120) {
+  const t = s.replace(/\s+/g, ' ').trim()
+  if (t.length <= max) return t
+  return t.slice(0, t.lastIndexOf(' ', max)).replace(/[,;:.]$/, '') + '…'
+}
+
+/**
+ * The opening paragraph of prose — skipping headings, metadata and blanks. Markdown
+ * hard-wraps, so a single line is usually half a sentence; take the whole paragraph
+ * and let clip() decide where to stop.
+ */
+function firstProse(items) {
+  const lines = addedLines(items[0] ?? {}).map((l) => l.trim())
+  const start = lines.findIndex(
+    (l) => l && !l.startsWith('#') && !/^\w+:\s/.test(l) && !l.startsWith('>') && !l.startsWith('-'),
+  )
+  if (start === -1) return null
+  const para = []
+  for (let i = start; i < lines.length && lines[i]; i++) para.push(lines[i])
+  return clip(para.join(' '))
+}
+
+/** A sub-line under a bullet. Slack renders the indent literally. */
+const under = (s) => `\n        ${s}`
+
+// ------------------------------------------------------------- detail extractors
+// Each returns a finished bullet string, or null to fall back to the generic line.
+
+function decisionDetail(items) {
+  // "# 2026-08-05 — A cohort's timezone is locked at creation"
+  const title = firstMatch(items, /^#\s+(?:\d{4}-\d{2}-\d{2}\s+[—-]\s+)?(.+)$/m)
+  if (!title) return null
+  const status = firstMatch(items, /^status:\s*(\w+)/m) ?? 'decided'
+  const gist = firstProse(items)
+  const head =
+    items.length > 1
+      ? `*${title}* — ${status}, plus ${items.length - 1} more`
+      : `*${title}* — ${status}`
+  return gist ? head + under(gist) : head
+}
+
+function constraintDetail(items) {
+  // "- **No session time or timezone change inside a started cohort**, same path…"
+  const clause = firstMatch(items, /-\s+\*\*(.+?)\*\*/s)
+  if (!clause) return null
+  return `Added to the *do not* list: *${clip(clause)}*`
+}
+
+function designDetail(items) {
+  const title = firstMatch(items, /^#\s+(.+)$/m)
+  const text = addedText(items)
+  const gaps = (text.match(/^\s*✗/gm) ?? []).length
+  const done = (text.match(/^\s*✓/gm) ?? []).length
+  if (!title && !gaps) return null
+  const counts = [done && `${done} designed`, gaps && `${gaps} missing`].filter(Boolean).join(', ')
+  return counts ? `*${title ?? 'Design context'}* — ${counts}` : `*${title}*`
+}
+
+function manifestDetail(items) {
+  // New second-level keys under `sources:` are new pointers.
+  const keys = addedLines(items[0] ?? {})
+    .map((l) => l.match(/^ {2}([a-z0-9_]+):\s*$/))
+    .filter(Boolean)
+    .map((m) => `\`${m[1]}\``)
+  if (!keys.length) return null
+  return `New source${keys.length > 1 ? 's' : ''} in the manifest: ${fmtList(keys)}`
+}
+
+function glossaryDetail(items) {
+  const terms = addedLines(items[0] ?? {})
+    .map((l) => l.match(/^\*\*(.+?)\*\*\s+—/))
+    .filter(Boolean)
+    .map((m) => `*${m[1]}*`)
+  if (!terms.length) return null
+  return `Glossary — ${fmtList(terms)}`
+}
+
+function briefDetail(items) {
+  const it = items[0]
+  if (!it?.patch) return null
+  const added = addedLines(it).filter((l) => l.trim().startsWith('- ')).length
+  // A removed bullet is a diff "-" followed by a markdown "-". "---" is a file header.
+  const removed = (it.patch.match(/^-(?!--)\s*-\s+\S/gm) ?? []).length
+  if (!added && !removed) return null
+  const parts = [added && `${added} added`, removed && `${removed} removed`].filter(Boolean)
+  return `Scope changed on *${project(it.filename).replace(/`/g, '')}* — ${parts.join(', ')}`
+}
+
+// ------------------------------------------------------------------ routing table
 
 /** Most specific pattern first — the first match wins. */
 const ROUTES = [
@@ -15,12 +132,14 @@ const ROUTES = [
     test: (p) => p.startsWith('product/decisions/'),
     area: 'decision',
     significant: true,
+    detail: decisionDetail,
     line: (n) => `${n === 1 ? 'A decision' : `${n} decisions`} landed in \`product/decisions/\``,
   },
   {
     test: (p) => p === 'engineering/constraints.md',
     area: 'constraint',
     significant: true,
+    detail: constraintDetail,
     line: () => 'The engineering constraints changed — the *do not* list',
   },
   {
@@ -33,6 +152,7 @@ const ROUTES = [
     test: (p) => p === 'product/glossary.md',
     area: 'glossary',
     significant: true,
+    detail: glossaryDetail,
     line: () => 'The glossary changed — a term or a learner state',
   },
   {
@@ -45,12 +165,14 @@ const ROUTES = [
     test: (p) => /^deliverables\/[^/]+\/brief\.md$/.test(p),
     area: 'brief',
     significant: true,
+    detail: briefDetail,
     line: (n, paths) => `${n === 1 ? 'A brief' : `${n} briefs`} changed: ${fmtList(paths.map(project))}`,
   },
   {
     test: (p) => p === 'context-manifest.yaml',
     area: 'manifest',
     significant: true,
+    detail: manifestDetail,
     line: () =>
       'The context manifest changed — where a source of truth lives, or whether it is reachable',
   },
@@ -60,6 +182,7 @@ const ROUTES = [
     test: (p) => p.startsWith('design/') || p.includes('/design/'),
     area: 'design',
     significant: true,
+    detail: designDetail,
     line: (n, paths) => `Design context changed: ${fmtList(paths.map(base))}`,
   },
   {
@@ -137,33 +260,48 @@ export function classify(path) {
 }
 
 /**
- * @param {object} pr        - { number, title, url, author, branch, repo }
- * @param {string[]} files   - repo-relative paths touched by the merge
- * @returns {{ significant: boolean, headline: string, lines: string[], areas: string[], payload: object }}
+ * @param {object} pr      - { number, title, url, author, branch }
+ * @param {Array<string|{filename,patch,status}>} files - paths, or the API's file objects.
+ *                           Given plain paths there is no diff to read, so the message
+ *                           falls back to the generic per-route line.
  */
 export function summarizeMerge(pr, files) {
-  const paths = unique(files.filter(Boolean))
+  const items = []
+  const seen = new Set()
+  for (const f of files) {
+    const it = typeof f === 'string' ? { filename: f } : f
+    if (!it?.filename || seen.has(it.filename)) continue
+    seen.add(it.filename)
+    items.push(it)
+  }
 
-  // Group paths by route, preserving the ROUTES order so the message reads
-  // most-important-first rather than in whatever order git listed the files.
+  // Group by route, preserving ROUTES order so the message reads most-important-first
+  // rather than in whatever order git listed the files.
   const groups = new Map()
-  for (const p of paths) {
-    const route = classify(p)
+  for (const it of items) {
+    const route = classify(it.filename)
     if (!groups.has(route)) groups.set(route, [])
-    groups.get(route).push(p)
+    groups.get(route).push(it)
   }
   const ordered = [...ROUTES, FALLBACK].filter((r) => groups.has(r))
 
-  const lines = ordered.map((r) => r.line(groups.get(r).length, groups.get(r)))
+  const lines = ordered.map((r) => {
+    const group = groups.get(r)
+    const paths = group.map((it) => it.filename)
+    // Prefer the specific reading of the diff; fall back when there's nothing to read.
+    return (r.detail && r.detail(group)) || r.line(group.length, paths, group)
+  })
+
   const areas = ordered.map((r) => r.area)
   const significant = ordered.some((r) => r.significant)
+  const paths = items.map((it) => it.filename)
 
-  const project = projectOf(paths)
-  const headline = project
-    ? `${titleCase(project)} — ${paths.length} ${plural(paths.length, 'file')} merged`
+  const only = projectOf(paths)
+  const headline = only
+    ? `${titleCase(only)} — ${paths.length} ${plural(paths.length, 'file')} merged`
     : `${paths.length} ${plural(paths.length, 'file')} merged`
 
-  return { significant, headline, lines, areas, payload: blocks(pr, headline, lines, paths) }
+  return { significant, headline, lines, areas, payload: blocks(pr, headline, lines) }
 }
 
 /** The single deliverable a merge is about, if there is exactly one. */
@@ -174,24 +312,20 @@ function projectOf(paths) {
   return projects.length === 1 ? projects[0] : null
 }
 
-const titleCase = (slug) =>
-  slug.replace(/-/g, ' ').replace(/^./, (c) => c.toUpperCase())
+const titleCase = (slug) => slug.replace(/-/g, ' ').replace(/^./, (c) => c.toUpperCase())
 
-function blocks(pr, headline, lines, paths) {
+function blocks(pr, headline, lines) {
   const body = lines.map((l) => `• ${l}`).join('\n')
   const author = pr.author ? ` · ${pr.author}` : ''
+  // The fallback text drives the notification and screen readers, so it gets the
+  // same content flattened onto one line.
+  const flat = lines.map((l) => l.replace(/\s*\n\s*/g, ' — ')).join('; ')
 
   return {
-    text: `${headline} — ${lines.join('; ')}`, // notification + accessibility fallback
+    text: `${headline} — ${flat}`,
     blocks: [
-      {
-        type: 'header',
-        text: { type: 'plain_text', text: headline, emoji: true },
-      },
-      {
-        type: 'section',
-        text: { type: 'mrkdwn', text: body },
-      },
+      { type: 'header', text: { type: 'plain_text', text: headline, emoji: true } },
+      { type: 'section', text: { type: 'mrkdwn', text: body } },
       {
         type: 'context',
         elements: [

@@ -154,6 +154,106 @@ describe('summarizeMerge — the message', () => {
   })
 })
 
+describe('detail — reading the change, not just the folder', () => {
+  const patchOf = (lines) => lines.map((l) => '+' + l).join('\n')
+
+  test('a decision reports its title, status and the gist', () => {
+    const s = summarizeMerge(PR, [
+      {
+        filename: 'product/decisions/2026-08-05-no-schedule-edit-after-start.md',
+        status: 'added',
+        patch: patchOf([
+          "# 2026-08-05 — Schedules can't be edited after a cohort starts",
+          '',
+          'status: decided',
+          '',
+          'Learners hold a calendar invite generated at enrollment that we cannot revoke.',
+        ]),
+      },
+    ])
+    assert.match(s.lines[0], /Schedules can't be edited after a cohort starts/)
+    assert.match(s.lines[0], /decided/)
+    assert.match(s.lines[0], /calendar invite generated at enrollment/)
+  })
+
+  test('a proposed decision is not reported as decided', () => {
+    const s = summarizeMerge(PR, [
+      {
+        filename: 'product/decisions/2026-08-05-x.md',
+        patch: patchOf(['# 2026-08-05 — Calendar sync', '', 'status: proposed', '', 'Third request.']),
+      },
+    ])
+    assert.match(s.lines[0], /proposed/)
+    assert.doesNotMatch(s.lines[0], /decided/)
+  })
+
+  test('a new constraint quotes the clause it added', () => {
+    const s = summarizeMerge(PR, [
+      {
+        filename: 'engineering/constraints.md',
+        patch: patchOf([
+          '- **No session time or timezone change inside a cohort that has already started**,',
+          '  same path, same reason.',
+        ]),
+      },
+    ])
+    assert.match(s.lines[0], /do not/)
+    assert.match(s.lines[0], /No session time or timezone change/)
+  })
+
+  test('a states matrix reports its coverage counts', () => {
+    const s = summarizeMerge(PR, [
+      {
+        filename: 'deliverables/cohort-scheduling/design/session-list-states.md',
+        patch: patchOf([
+          '# Session list — states coverage',
+          '  ✓ Session list · desktop · default',
+          '  ✓ Session list · mobile-320 · default',
+          '  ✗ Session list · lapsed learner · all viewports',
+        ]),
+      },
+    ])
+    assert.match(s.lines[0], /Session list — states coverage/)
+    assert.match(s.lines[0], /2 designed/)
+    assert.match(s.lines[0], /1 missing/)
+  })
+
+  test('the manifest names the sources that joined it', () => {
+    const s = summarizeMerge(PR, [
+      {
+        filename: 'context-manifest.yaml',
+        patch: patchOf(['  cohort_scheduling_flow:', '    type: figma', '    reachable: true']),
+      },
+    ])
+    assert.match(s.lines[0], /New source in the manifest/)
+    assert.match(s.lines[0], /cohort_scheduling_flow/)
+  })
+
+  test('a merge with no patch falls back to the generic line', () => {
+    const s = summarizeMerge(PR, ['product/decisions/2026-08-05-x.md'])
+    assert.equal(s.lines[0], 'A decision landed in `product/decisions/`')
+  })
+
+  test('an unreadable patch falls back rather than emitting a broken bullet', () => {
+    const s = summarizeMerge(PR, [
+      { filename: 'engineering/constraints.md', patch: '+just some prose, no bold clause' },
+    ])
+    assert.equal(s.lines[0], 'The engineering constraints changed — the *do not* list')
+  })
+
+  test('the flat text fallback carries the detail on one line', () => {
+    const { payload } = summarizeMerge(PR, [
+      {
+        filename: 'product/decisions/2026-08-05-x.md',
+        patch: patchOf(['# 2026-08-05 — A title', '', 'status: decided', '', 'The gist.']),
+      },
+    ])
+    assert.doesNotMatch(payload.text, /\n/)
+    assert.match(payload.text, /A title/)
+    assert.match(payload.text, /The gist/)
+  })
+})
+
 describe('run — the decision to post', () => {
   test('an unmerged close posts nothing', async () => {
     const res = await run(
@@ -270,6 +370,7 @@ describe('listPullRequestFiles', () => {
     }))
     assert.equal(files.length, 101)
     assert.equal(call, 2)
+    assert.equal(files[100].filename, 'team/charter.md')
   })
 
   test('an API error surfaces rather than yielding an empty file list', async () => {
