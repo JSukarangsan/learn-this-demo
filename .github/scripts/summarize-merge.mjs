@@ -54,7 +54,9 @@ const ROUTES = [
     line: () => '`index.md` changed — where a source of truth lives, or whether it is reachable',
   },
   {
-    test: (p) => p.startsWith('design/'),
+    // Design context counts wherever it's filed — the shared folder, or inside a
+    // project when it's specific to one. A states matrix is not a project note.
+    test: (p) => p.startsWith('design/') || p.includes('/design/'),
     area: 'design',
     significant: true,
     line: (n, paths) => `Design context changed: ${fmtList(paths.map(base))}`,

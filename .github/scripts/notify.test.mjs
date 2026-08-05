@@ -56,6 +56,16 @@ describe('classify — the routing table', () => {
     assert.equal(classify('deliverables/enrollment-userflow/notes/raw.md').significant, false)
   })
 
+  test('design context counts wherever it is filed', () => {
+    for (const p of [
+      'design/tokens.json',
+      'deliverables/cohort-scheduling/design/session-list-states.md',
+    ]) {
+      assert.equal(classify(p).area, 'design', p)
+      assert.equal(classify(p).significant, true, p)
+    }
+  })
+
   test('team/, index.md, glossary and root CLAUDE.md are all significant', () => {
     for (const p of ['team/charter.md', 'index.md', 'product/glossary.md', 'CLAUDE.md']) {
       assert.equal(classify(p).significant, true, `${p} should be significant`)
