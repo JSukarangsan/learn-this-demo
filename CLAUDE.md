@@ -40,8 +40,10 @@ and two of them are wrong for our purposes.
 ## What isn't ours to hold
 
 Company strategy, the content model, pricing, the billing console. When we need any of
-it, `index.md` says where it lives and whether a tool can reach it — a pointer, not a
-copy. Maintaining a copy of another team's document is a race you lose.
+it, `context-manifest.yaml` says where it lives, who owns it, and whether a tool can reach
+it — a pointer, not a copy. Maintaining a copy of another team's document is a race you
+lose.
 
-`index.md` is also where our own out-of-repo sources live: the Notion backlog, the Figma
-file, the ops calendar.
+The manifest is also where our own out-of-repo sources live: the Notion backlog, the Figma
+file, the ops calendar. **Nothing in it refreshes itself** — `/refresh-index` checks the
+pointers and proposes edits, and a person confirms them.

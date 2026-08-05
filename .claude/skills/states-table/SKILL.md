@@ -22,7 +22,7 @@ So don't write it down. Generate it on demand. That's this skill.
 | **Accessibility** | `design/CLAUDE.md` and any rule in `team/` — these are requirements on every cell, not a column |
 | **Design rules that kill cells** | `design/CLAUDE.md` — e.g. *no modals in enrollment*, *assigned learners never see pricing*. A cell that a rule forbids is **N/A**, not missing. |
 
-**What's designed** comes from the Figma file in `index.md` → *Design system + product UI*.
+**What's designed** comes from the Figma file in `context-manifest.yaml` → `sources.product_ui`.
 Read it via the Figma MCP. Frames are named `Screen / viewport / state` — parse that.
 
 **The state segment often won't be a canonical learner state, and that is a finding.**

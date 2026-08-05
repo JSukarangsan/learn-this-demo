@@ -1,7 +1,7 @@
 # Webapp — charter
 
 > Last refreshed: 2026-07. Reviewed at half planning.
-> Source: H2 planning doc — see `../index.md` for where it lives.
+> Source: H2 planning doc — see `../context-manifest.yaml` → `sources.h2_planning`.
 
 ## What this team is for
 

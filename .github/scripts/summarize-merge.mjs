@@ -48,10 +48,11 @@ const ROUTES = [
     line: (n, paths) => `${n === 1 ? 'A brief' : `${n} briefs`} changed: ${fmtList(paths.map(project))}`,
   },
   {
-    test: (p) => p === 'index.md',
-    area: 'index',
+    test: (p) => p === 'context-manifest.yaml',
+    area: 'manifest',
     significant: true,
-    line: () => '`index.md` changed — where a source of truth lives, or whether it is reachable',
+    line: () =>
+      'The context manifest changed — where a source of truth lives, or whether it is reachable',
   },
   {
     // Design context counts wherever it's filed — the shared folder, or inside a

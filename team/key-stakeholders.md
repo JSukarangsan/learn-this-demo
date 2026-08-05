@@ -10,6 +10,7 @@
 |---|---|---|
 | **Wren** | Engineering lead | Also the person who actually unblocks Billing reviews, which is not in any org chart |
 | **Tobias** | Senior engineer, video | The only person who has debugged the vendor SDK. Escalation path for anything live-session. |
+| **Ines** | Product designer | Owns empty-state copy outright — see `../design/CLAUDE.md`. Works in the Figma file the manifest points at. |
 | **Marguerite** | Instructor Tools PM | Not on this team. Owns the content model, so she is on the critical path for more of our work than anyone expects. |
 
 ## Who decides what

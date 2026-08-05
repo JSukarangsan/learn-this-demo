@@ -66,8 +66,13 @@ describe('classify — the routing table', () => {
     }
   })
 
-  test('team/, index.md, glossary and root CLAUDE.md are all significant', () => {
-    for (const p of ['team/charter.md', 'index.md', 'product/glossary.md', 'CLAUDE.md']) {
+  test('team/, the manifest, glossary and root CLAUDE.md are all significant', () => {
+    for (const p of [
+      'team/charter.md',
+      'context-manifest.yaml',
+      'product/glossary.md',
+      'CLAUDE.md',
+    ]) {
       assert.equal(classify(p).significant, true, `${p} should be significant`)
     }
   })

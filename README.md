@@ -14,7 +14,7 @@ About thirty short files, ordered by how often they change.
 
 ```
 CLAUDE.md         what this team owns, and what it doesn't. Read first.
-index.md          where the sources of truth live — including the ones outside this repo
+context-manifest.yaml   where the sources of truth live — including the ones outside this repo
 
 team/             charter · goals · roadmap · stakeholders · ownership · how we work
 product/          decisions with a status · glossary · procedures
@@ -49,12 +49,16 @@ The same split decides what's worth a notification: see
 ## It holds pointers, not copies
 
 The product backlog is a Notion database. The UI is a Figma file. The ops calendar is in
-Drive. None of them are duplicated here — `index.md` carries a row for each saying where
-it is, whether a tool can reach it today, and when that was last confirmed.
+Drive. None of them are duplicated here — `context-manifest.yaml` carries an entry for each
+with its owner, a refresh cadence, whether a tool can reach it today, and when that was
+last confirmed.
 
-Two rows say **not reachable**, and one of those says *and correctly so*. A pointer that
-records something as authoritative and deliberately out of reach is a finished answer,
-not a to-do.
+Two entries say `reachable: false`, and one of those adds `deliberate: true`. A pointer that
+records something as authoritative and deliberately out of reach is a finished answer, not
+a to-do.
+
+**The manifest does not refresh itself.** Keeping it true is about fifteen minutes a month,
+and it's the first thing here to go stale.
 
 ## Contributing
 

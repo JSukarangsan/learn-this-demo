@@ -11,7 +11,7 @@ the repo still hear what landed.
 | `workflows/merge-notify.yml` | the trigger — merged PRs into `main` only |
 | `scripts/summarize-merge.mjs` | the routing table and the message. **This is the file worth reading.** |
 | `scripts/notify.mjs` | fetches the PR's file list, decides whether to post, posts |
-| `scripts/notify.test.mjs` | 22 tests, no dependencies |
+| `scripts/notify.test.mjs` | 24 tests, no dependencies |
 
 ## It stays quiet on purpose
 
@@ -19,7 +19,7 @@ A notification that fires on every merge gets muted inside a week, so the folder
 landed in decides whether anyone hears about it.
 
 **Posts** · a decision entry · `engineering/constraints.md` · a metric definition ·
-the glossary · anything in `team/` · a project `brief.md` · `index.md` · `design/` ·
+the glossary · anything in `team/` · a project `brief.md` · `context-manifest.yaml` · `design/` ·
 the root `CLAUDE.md`
 
 **Stays quiet** · raw notes in `comms/notes/` · archived reports in `comms/status/`, which

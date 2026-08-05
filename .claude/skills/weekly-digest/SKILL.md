@@ -38,13 +38,13 @@ because writing is hard.
    same skill, so quoting it compounds whatever it got wrong, and anything still true in
    it is still true in the sources you already read.
 
-6. **`team/goals-and-okrs.md`** — what we're supposed to be moving. The update should say
+7. **`team/goals-and-okrs.md`** — what we're supposed to be moving. The update should say
    something about direction, not just list activity.
 
 ## Reaching Notion
 
 The backlog is the source of truth for scope. It lives in Notion and is reachable by tool —
-`index.md` has the row. It knows nothing about this repo, and it doesn't need to.
+`context-manifest.yaml` has the entry. It knows nothing about this repo, and it doesn't need to.
 
 - Query the **Backlog** data source at `collection://b5aa8308-8ec2-4837-9bc3-fe6330e3754b`
   using the Notion MCP `query-data-sources` tool.

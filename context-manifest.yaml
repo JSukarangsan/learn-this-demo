@@ -1,0 +1,116 @@
+# context-manifest.yaml — where this team's sources of truth actually live.
+#
+# This is the addressing layer, not a source of truth. Locations and status only,
+# never content. The moment a summary gets pasted in here there are two copies of it
+# and no way to tell which one is wrong.
+#
+# NOTHING IN THIS FILE REFRESHES ITSELF. Someone reads these entries and updates
+# last_confirmed — about fifteen minutes a month, and it is the first thing here to go
+# stale. `/refresh-index` checks each pointer and proposes the edit; a person still
+# confirms it. The version that watches sources on its own does not exist yet.
+
+team: webapp
+full_name: "Learn.this — Webapp team"
+
+# What an agent should know before pulling anything.
+quick_context: |
+  We own the learner-facing web app: catalog, enrollment, the live session experience.
+  Six people. Next.js on Vercel, Postgres behind the enrollment and billing services.
+  Four learner states — anonymous, self-serve, assigned, lapsed — and most of the
+  confusion in this product traces to someone forgetting one of them.
+
+sources:
+  product_backlog:
+    canonical: "https://app.notion.com/p/3b3a901bd57d8146a6b6d48f1abdb851"
+    type: notion_database
+    owner: "Webapp PM"
+    reachable: true # via Notion MCP
+    refresh: live
+    last_confirmed: 2026-08-05
+    notes: >
+      Scope of record, and deliberately not a file in this repo. Requirements move
+      faster than anyone will hand-copy into markdown, so a copy would be wrong within
+      a week and nobody would know which version was real. /weekly-digest reads it live.
+      The arrow only points one way — we know about the backlog, it knows nothing
+      about us. What this repo holds that the backlog doesn't is product/decisions/,
+      which says *why* scope is what it is.
+
+  product_ui:
+    canonical: "https://www.figma.com/design/YA4IogBXflpPsX5HEAm78o"
+    type: figma
+    owner: "Ines Okafor (Design)"
+    reachable: true # via Figma MCP
+    refresh: live
+    last_confirmed: 2026-08-05
+    notes: >
+      Design system and product UI. Frames are named `Screen / viewport / state`.
+      Pulled live rather than summarized — visual state doesn't survive being
+      described in prose.
+
+  h2_planning:
+    canonical: "drive://Learn.this/Planning/H2 2026"
+    type: google_doc
+    owner: "VP Product — not this team"
+    reachable: true # via Glean
+    refresh: quarterly
+    last_confirmed: 2026-07-14
+    notes: >
+      Authored a level up. team/charter.md and team/goals-and-okrs.md are summaries of
+      it. Regenerate them from here rather than editing them in place — maintaining a
+      second copy of somebody else's document is a race you lose.
+
+  cohort_calendar:
+    canonical: "drive://Learn.this/Ops/Cohort calendar"
+    type: google_sheet
+    owner: "Priyanka (Ops)"
+    reachable: true # via Glean
+    refresh: weekly
+    last_confirmed: 2026-07-28
+
+  instructor_nps:
+    canonical: "drive://Research/2026/Instructor NPS"
+    type: google_sheet
+    owner: "Insights"
+    reachable: true # via Glean
+    refresh: quarterly
+    last_confirmed: 2026-07-28
+
+  vendor_video_sla:
+    canonical: "vendor portal, SSO only — no API"
+    type: vendor_portal
+    owner: "Tobias Ferro (Eng)"
+    reachable: false
+    workaround: "Export quarterly into insights/. That export is the copy of record."
+    refresh: quarterly
+    last_confirmed: 2026-07-14
+
+  contract_terms:
+    canonical: "Legal, counsel only"
+    type: restricted
+    owner: "Legal"
+    reachable: false
+    deliberate: true
+    notes: >
+      Canonical, unreachable, and correctly so. Some material should stay where it is.
+      Writing down that it exists, that it's authoritative, and that we are deliberately
+      not making it reachable is a finished answer, not a to-do — and an agent that
+      knows this is better than one that goes looking. /refresh-index must never report
+      this as drift.
+
+# Written here and nowhere else. No upstream to point at, because this repo is the
+# system of record for them.
+local:
+  - product/decisions/ # why scope is what it is. The backlog says what, not why.
+  - product/glossary.md
+  - engineering/constraints.md
+  - design/CLAUDE.md
+  - insights/definitions.md
+  - team/ownership.md
+
+# What a tool can actually reach from here today.
+available_connections:
+  - notion # the backlog
+  - figma # the UI
+  - glean # Drive — planning, ops calendar, research
+  # vendor portal: SSO only, no API
+  # legal: deliberately not connected
