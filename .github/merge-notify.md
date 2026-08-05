@@ -11,7 +11,7 @@ the repo still hear what landed.
 | `workflows/merge-notify.yml` | the trigger — merged PRs into `main` only |
 | `scripts/summarize-merge.mjs` | the routing table and the message. **This is the file worth reading.** |
 | `scripts/notify.mjs` | fetches the PR's file list, decides whether to post, posts |
-| `scripts/notify.test.mjs` | 24 tests, no dependencies |
+| `scripts/notify.test.mjs` | 32 tests, no dependencies |
 
 ## It stays quiet on purpose
 
@@ -29,6 +29,21 @@ procedures
 That split is the same one the kit's `CLAUDE.md` files already describe — which is the
 point to make out loud when this fires. The channel is readable because the folder
 structure carries meaning.
+
+## It's written for people who never open the repo
+
+That's the whole audience. So the message carries no filenames, no folder names, and
+none of the kit's own vocabulary — no *manifest*, no *brief*, no *merged*. It says what
+the team now knows that it didn't yesterday:
+
+> • A new rule about what we must never do: *No session time or timezone change inside a
+> cohort that has already started*
+>   _Learners hold a calendar invite we generated at enrollment and cannot revoke._
+
+Each bullet also carries the reasoning underneath, pulled from the change itself. **No
+model runs** — it's read straight out of the diff, so it can't invent anything and can't
+be slow. That only works because these files have a predictable shape, which is somewhere
+between a happy accident and the entire argument for the shape.
 
 Override with `NOTIFY_ALWAYS=true` if you want a routine merge to post during a rehearsal.
 

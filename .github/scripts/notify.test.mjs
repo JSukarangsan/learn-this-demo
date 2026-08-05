@@ -93,10 +93,10 @@ describe('summarizeMerge — the message', () => {
     ])
 
     assert.equal(s.significant, true)
-    assert.match(s.headline, /^Enrollment userflow — 3 files merged$/)
+    assert.match(s.headline, /^Enrollment userflow — 3 updates$/)
     assert.deepEqual(s.areas, ['brief', 'design', 'project'])
     assert.ok(
-      s.lines.some((l) => l.includes('Design context changed')),
+      s.lines.some((l) => /Design/.test(l)),
       `expected a design line, got ${JSON.stringify(s.lines)}`,
     )
   })
@@ -113,15 +113,15 @@ describe('summarizeMerge — the message', () => {
   test('a comms-only merge is routine', () => {
     const s = summarizeMerge(PR, ['comms/notes/2026-08-06-enrollment-review.md'])
     assert.equal(s.significant, false)
-    assert.equal(s.lines[0], '1 raw note filed in `comms/notes/` — not canonical')
+    assert.match(s.lines[0], /raw meeting notes filed — what was said, not what was decided/)
   })
 
   test('singular and plural both read correctly', () => {
     const one = summarizeMerge(PR, ['product/decisions/a.md'])
     const two = summarizeMerge(PR, ['product/decisions/a.md', 'product/decisions/b.md'])
-    assert.equal(one.lines[0], 'A decision landed in `product/decisions/`')
-    assert.equal(two.lines[0], '2 decisions landed in `product/decisions/`')
-    assert.match(one.headline, /1 file merged/)
+    assert.equal(one.lines[0], 'The team settled something')
+    assert.equal(two.lines[0], 'The team settled 2 things')
+    assert.match(one.headline, /1 update/)
   })
 
   test('the headline only names a project when exactly one is touched', () => {
@@ -129,12 +129,12 @@ describe('summarizeMerge — the message', () => {
       'deliverables/enrollment-userflow/brief.md',
       'deliverables/search-relevance/brief.md',
     ])
-    assert.equal(two.headline, '2 files merged')
+    assert.equal(two.headline, "2 updates to the team's context")
   })
 
   test('duplicate paths are counted once', () => {
     const s = summarizeMerge(PR, ['team/charter.md', 'team/charter.md'])
-    assert.match(s.headline, /1 file merged/)
+    assert.match(s.headline, /1 update/)
   })
 
   test('the payload is valid Block Kit with a text fallback and a working link', () => {
@@ -148,7 +148,8 @@ describe('summarizeMerge — the message', () => {
     )
     // Slack truncates plain_text headers at 150 chars and rejects longer ones.
     assert.ok(payload.blocks[0].text.text.length <= 150)
-    assert.match(payload.blocks[2].elements[0].text, /<https:\/\/github\.com\/.+\|#42 .+>/)
+    assert.match(payload.blocks[2].elements[0].text, /<https:\/\/github\.com\/.+\|.+>/)
+    assert.match(payload.blocks[2].elements[0].text, /#42/)
     assert.match(payload.blocks[2].elements[0].text, /wren-design/)
     assert.ok(JSON.stringify(payload).length < 3000, 'well under the 40kb webhook limit')
   })
@@ -172,7 +173,7 @@ describe('detail — reading the change, not just the folder', () => {
       },
     ])
     assert.match(s.lines[0], /Schedules can't be edited after a cohort starts/)
-    assert.match(s.lines[0], /decided/)
+    assert.match(s.lines[0], /The team settled something/)
     assert.match(s.lines[0], /calendar invite generated at enrollment/)
   })
 
@@ -183,8 +184,8 @@ describe('detail — reading the change, not just the folder', () => {
         patch: patchOf(['# 2026-08-05 — Calendar sync', '', 'status: proposed', '', 'Third request.']),
       },
     ])
-    assert.match(s.lines[0], /proposed/)
-    assert.doesNotMatch(s.lines[0], /decided/)
+    assert.match(s.lines[0], /not settled yet/)
+    assert.doesNotMatch(s.lines[0], /The team settled/)
   })
 
   test('a new constraint quotes the clause it added', () => {
@@ -197,7 +198,7 @@ describe('detail — reading the change, not just the folder', () => {
         ]),
       },
     ])
-    assert.match(s.lines[0], /do not/)
+    assert.match(s.lines[0], /must never do/)
     assert.match(s.lines[0], /No session time or timezone change/)
   })
 
@@ -213,9 +214,9 @@ describe('detail — reading the change, not just the folder', () => {
         ]),
       },
     ])
-    assert.match(s.lines[0], /Session list — states coverage/)
-    assert.match(s.lines[0], /2 designed/)
-    assert.match(s.lines[0], /1 missing/)
+    assert.match(s.lines[0], /Session list/)
+    assert.match(s.lines[0], /2 are drawn/)
+    assert.match(s.lines[0], /1 still/)
   })
 
   test('the manifest names the sources that joined it', () => {
@@ -225,20 +226,20 @@ describe('detail — reading the change, not just the folder', () => {
         patch: patchOf(['  cohort_scheduling_flow:', '    type: figma', '    reachable: true']),
       },
     ])
-    assert.match(s.lines[0], /New source in the manifest/)
-    assert.match(s.lines[0], /cohort_scheduling_flow/)
+    assert.match(s.lines[0], /wrote down where to find/)
+    assert.match(s.lines[0], /cohort scheduling flow/)
   })
 
   test('a merge with no patch falls back to the generic line', () => {
     const s = summarizeMerge(PR, ['product/decisions/2026-08-05-x.md'])
-    assert.equal(s.lines[0], 'A decision landed in `product/decisions/`')
+    assert.equal(s.lines[0], 'The team settled something')
   })
 
   test('an unreadable patch falls back rather than emitting a broken bullet', () => {
     const s = summarizeMerge(PR, [
       { filename: 'engineering/constraints.md', patch: '+just some prose, no bold clause' },
     ])
-    assert.equal(s.lines[0], 'The engineering constraints changed — the *do not* list')
+    assert.equal(s.lines[0], 'The rules about what we must never do changed')
   })
 
   test('the flat text fallback carries the detail on one line', () => {
@@ -421,8 +422,8 @@ describe('integration — a real POST over the wire', () => {
 
     assert.equal(received.method, 'POST')
     assert.equal(received.headers['content-type'], 'application/json')
-    assert.equal(received.body.blocks[0].text.text, 'Enrollment userflow — 3 files merged')
-    assert.match(received.body.blocks[1].text.text, /The engineering constraints changed/)
-    assert.match(received.body.blocks[1].text.text, /A brief changed/)
+    assert.equal(received.body.blocks[0].text.text, 'Enrollment userflow — 3 updates')
+    assert.match(received.body.blocks[1].text.text, /must never do/)
+    assert.match(received.body.blocks[1].text.text, /in and out of scope/)
   })
 })
