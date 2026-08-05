@@ -58,8 +58,43 @@ function firstProse(items) {
   return clip(para.join(' '))
 }
 
-/** A sub-line under a bullet. Slack renders the indent literally. */
-const under = (s) => `\n        ${s}`
+/**
+ * The "why" line under a bullet. Every significant bullet gets one — the label alone
+ * ("a constraint changed") still sends the reader off to go and look, which is the
+ * errand the notification exists to save them.
+ *
+ * Italic as well as indented: Slack is inconsistent about preserving leading spaces,
+ * so the italics carry the subordination even if the indent collapses.
+ */
+const under = (s) => {
+  if (!s) return ''
+  const t = clip(sentence(s), 150)
+  return t ? `\n        _${t}_` : ''
+}
+
+/** Drop a markdown byline ("Wren, Aug 5.") and start on a capital. */
+function sentence(s) {
+  const t = s.replace(/^\s*[A-Z][a-z]+,\s+\w+\s+\d+\.\s*/, '').trim()
+  return t ? t[0].toUpperCase() + t.slice(1) : ''
+}
+
+/** Title of a markdown file from its first heading. */
+function titleOf(items) {
+  return firstMatch(items, /^#\s+(?:\d{4}-\d{2}-\d{2}\s+[—-]\s+)?(.+?)\s*$/m)
+}
+
+/** How each manifest `type:` reads in a sentence. */
+const TYPE_NOUN = {
+  figma: 'a Figma file',
+  notion_database: 'a Notion database',
+  google_doc: 'a Google Doc',
+  google_sheet: 'a Google Sheet',
+  github_repo: 'a GitHub repo',
+  slack_channel: 'a Slack channel',
+  vendor_portal: 'a vendor portal',
+  markdown: 'a local file',
+  restricted: 'restricted material',
+}
 
 // ------------------------------------------------------------- detail extractors
 // Each returns a finished bullet string, or null to fall back to the generic line.
@@ -79,29 +114,61 @@ function decisionDetail(items) {
 
 function constraintDetail(items) {
   // "- **No session time or timezone change inside a started cohort**, same path…"
-  const clause = firstMatch(items, /-\s+\*\*(.+?)\*\*/s)
-  if (!clause) return null
-  return `Added to the *do not* list: *${clip(clause)}*`
+  const m = addedText(items).match(/-\s+\*\*(.+?)\*\*[,.]?\s*([\s\S]*)/)
+  if (!m) return null
+  // Everything after the bold clause, up to the blank line, is the reason for it.
+  return `Added to the *do not* list: *${clip(m[1])}*` + under(m[2].split(/\n\s*\n/)[0])
 }
 
 function designDetail(items) {
-  const title = firstMatch(items, /^#\s+(.+)$/m)
+  const title = titleOf(items)
   const text = addedText(items)
   const gaps = (text.match(/^\s*✗/gm) ?? []).length
   const done = (text.match(/^\s*✓/gm) ?? []).length
   if (!title && !gaps) return null
   const counts = [done && `${done} designed`, gaps && `${gaps} missing`].filter(Boolean).join(', ')
-  return counts ? `*${title ?? 'Design context'}* — ${counts}` : `*${title}*`
+  const head = counts ? `*${title ?? 'Design context'}* — ${counts}` : `*${title}*`
+  // Name the first gap. A count says there's a problem; this says which one.
+  const firstGap = (text.match(/^\s*✗\s*(.+)$/m) ?? [])[1]
+  return head + under(firstGap && `Top gap: ${firstGap.trim()}`)
 }
 
 function manifestDetail(items) {
+  const lines = addedLines(items[0] ?? {})
   // New second-level keys under `sources:` are new pointers.
-  const keys = addedLines(items[0] ?? {})
-    .map((l) => l.match(/^ {2}([a-z0-9_]+):\s*$/))
-    .filter(Boolean)
-    .map((m) => `\`${m[1]}\``)
-  if (!keys.length) return null
-  return `New source${keys.length > 1 ? 's' : ''} in the manifest: ${fmtList(keys)}`
+  const keys = lines.map((l) => l.match(/^ {2}([a-z0-9_]+):\s*$/)).filter(Boolean).map((m) => m[1])
+  if (!keys.length) {
+    // No new source, but reachability flipping is the other thing worth hearing about.
+    return lines.some((l) => /^\s*reachable:/.test(l))
+      ? "The manifest changed — a source's reachability moved"
+      : null
+  }
+  const head = `New source${keys.length > 1 ? 's' : ''} in the manifest: ${fmtList(keys.map((k) => `\`${k}\``))}`
+  // What the pointer actually points at, so the line stands on its own.
+  const text = addedText(items)
+  const type = (text.match(/^\s*type:\s*(\S+)/m) ?? [])[1]
+  const owner = (text.match(/^\s*owner:\s*"?([^"\n]+)"?/m) ?? [])[1]
+  const bits = [
+    type && (TYPE_NOUN[type] ?? `a ${type.replace(/_/g, ' ')}`),
+    owner && `owned by ${owner.trim()}`,
+  ].filter(Boolean).join(', ')
+  return head + under(bits && `Points at ${bits}.`)
+}
+
+/** Project files that aren't the brief — notes, specs, whatever the team filed. */
+function projectDetail(items) {
+  const named = items.filter((it) => it.patch)
+  const title = named.length ? titleOf(named) : null
+  if (!title) return null
+  const proj = project(named[0].filename).replace(/`/g, '')
+  const extra = items.length > 1 ? `, plus ${items.length - 1} more` : ''
+  return `*${title}* filed under *${proj}*${extra}` + under(firstProse([named[0]]))
+}
+
+function teamDetail(items) {
+  if (!titleOf(items)) return null
+  return `Stable context changed: ${fmtList(items.map((it) => base(it.filename)))}` +
+    under(firstProse([items[0]]))
 }
 
 function glossaryDetail(items) {
@@ -159,6 +226,7 @@ const ROUTES = [
     test: (p) => p.startsWith('team/'),
     area: 'team',
     significant: true,
+    detail: teamDetail,
     line: (n, paths) => `Stable context changed: ${fmtList(paths.map(base))}`,
   },
   {
@@ -201,6 +269,7 @@ const ROUTES = [
     test: (p) => p.startsWith('deliverables/'),
     area: 'project',
     significant: false,
+    detail: projectDetail,
     line: (n, paths) => `${n} ${plural(n, 'file')} under ${fmtList(unique(paths.map(project)))}`,
   },
   {
