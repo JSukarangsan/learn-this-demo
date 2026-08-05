@@ -13,15 +13,5 @@ Everything here is the context every project inherits without asking for it.
 - `how-we-work.md` — cadence, rituals, review bar, channels
 - `ownership.md` — the routing table: who owns what, where to ask, who actually unblocks
 
-## What is deliberately not here
-
-| Looking for | It's in |
-|---|---|
-| What a metric *means* | `../insights/definitions.md` |
-| What a product term means | `../product/glossary.md` |
-| Why we decided something | `../product/decisions/` |
-| Technical constraints | `../engineering/constraints.md` |
-| Design rules and tokens | `../design/` |
-
-One copy of each thing. If you find yourself restating a metric definition here to make
-a goal readable, link it instead — two copies drift and then nobody knows which is right.
+One copy of each thing. If you find yourself restating a metric definition here to make a
+goal readable, link it instead — two copies drift and then nobody knows which is right.
