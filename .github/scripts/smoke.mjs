@@ -12,20 +12,20 @@
 import { summarizeMerge } from './summarize-merge.mjs'
 import { postToSlack } from './notify.mjs'
 
-// The beat-6 merge: the conflict resolved, so a decision, a constraint and the brief
+// The closing merge: the conflict settled, so a decision, a constraint and the brief
 // all move together. This is the message the demo is building toward.
 const PR = {
-  number: 44,
-  title: 'Lapsed-learner state: decision + brief update',
-  url: 'https://github.com/learn-this/webapp-context/pull/44',
-  author: 'marguerite-pm',
+  number: 3,
+  title: 'Schedule editing after start: decision + brief update',
+  url: 'https://github.com/JSukarangsan/learn-this-demo/pull/3',
+  author: 'wren-kelleher',
   branch: 'main',
 }
 
 const FILES = [
-  'product/decisions/2026-08-06-lapsed-recording-access.md',
+  'product/decisions/2026-08-05-no-schedule-edit-after-start.md',
   'engineering/constraints.md',
-  'deliverables/enrollment-userflow/brief.md',
+  'deliverables/cohort-scheduling/brief.md',
 ]
 
 const summary = summarizeMerge(PR, FILES)
