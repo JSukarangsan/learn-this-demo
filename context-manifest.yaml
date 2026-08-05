@@ -47,6 +47,18 @@ sources:
       Pulled live rather than summarized — visual state doesn't survive being
       described in prose.
 
+  cohort_scheduling_flow:
+    canonical: "https://www.figma.com/design/YA4IogBXflpPsX5HEAm78o"
+    page: "Cohort scheduling"
+    type: figma
+    owner: "Ines Okafor (Design)"
+    reachable: true # via Figma MCP
+    refresh: live
+    last_confirmed: 2026-08-05
+    notes: >
+      Its own entry rather than a line under product_ui, because /states-table has to
+      resolve one page and not the whole file. Frames are named `Screen / viewport / state`.
+
   h2_planning:
     canonical: "drive://Learn.this/Planning/H2 2026"
     type: google_doc
