@@ -16,6 +16,13 @@ means it confidently recommends the dangerous thing.
 - **No enrollment change inside a cohort that has already started** without an
   instructor confirmation step. Refunds are manual and Finance eats the difference.
 
+- **No session time or timezone change inside a cohort that has already started**,
+  same path, same reason. Learners hold a calendar invite we generated at enrollment
+  and cannot revoke. Moving a session means re-issuing every invite and giving every
+  affected learner a decision. **That confirmation path does not exist yet.** Any flow
+  that assumes it does is describing a different project — see
+  `../deliverables/cohort-scheduling/engineering-notes.md`.
+
 - **Unsubscribe and exit resolve in one click.** No confirmation screen, no "are you
   sure," no exit survey. This is a legal requirement, not a design preference. It will
   look like an easy retention win. It isn't.
