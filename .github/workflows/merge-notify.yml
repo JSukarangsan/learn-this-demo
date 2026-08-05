@@ -17,7 +17,12 @@ jobs:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
+      # Pin to the commit the merge actually produced. The default for a
+      # pull_request event is refs/pull/N/merge, which is a pre-merge preview and
+      # can carry an older copy of these scripts from the PR branch.
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
 
       - uses: actions/setup-node@v4
         with:
