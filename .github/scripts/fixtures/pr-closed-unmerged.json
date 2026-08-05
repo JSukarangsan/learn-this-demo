@@ -1,0 +1,12 @@
+{
+  "action": "closed",
+  "repository": { "full_name": "learn-this/webapp-context" },
+  "pull_request": {
+    "number": 40,
+    "title": "Abandoned spike",
+    "html_url": "https://github.com/learn-this/webapp-context/pull/40",
+    "merged": false,
+    "user": { "login": "tobias-eng" },
+    "base": { "ref": "main" }
+  }
+}

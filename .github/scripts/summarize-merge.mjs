@@ -1,0 +1,190 @@
+/**
+ * Turns a merged PR into the Slack message the team actually needs to see.
+ *
+ * The point of this file is the routing table below. A notification that fires on
+ * every merge gets muted in a week, so the folder a change landed in decides whether
+ * anyone hears about it. That mapping is the same one the kit's CLAUDE.md files
+ * describe — stable context up top, raw material in comms/, project work in
+ * deliverables/ — which is what makes the summary readable to someone who will
+ * never open the repo.
+ */
+
+/** Most specific pattern first — the first match wins. */
+const ROUTES = [
+  {
+    test: (p) => p.startsWith('product/decisions/'),
+    area: 'decision',
+    significant: true,
+    line: (n) => `${n === 1 ? 'A decision' : `${n} decisions`} landed in \`product/decisions/\``,
+  },
+  {
+    test: (p) => p === 'engineering/constraints.md',
+    area: 'constraint',
+    significant: true,
+    line: () => 'The engineering constraints changed — the *do not* list',
+  },
+  {
+    test: (p) => p === 'insights/definitions.md',
+    area: 'metrics',
+    significant: true,
+    line: () => 'A metric definition changed',
+  },
+  {
+    test: (p) => p === 'product/glossary.md',
+    area: 'glossary',
+    significant: true,
+    line: () => 'The glossary changed — a term or a learner state',
+  },
+  {
+    test: (p) => p.startsWith('team/'),
+    area: 'team',
+    significant: true,
+    line: (n, paths) => `Stable context changed: ${fmtList(paths.map(base))}`,
+  },
+  {
+    test: (p) => /^deliverables\/[^/]+\/brief\.md$/.test(p),
+    area: 'brief',
+    significant: true,
+    line: (n, paths) => `${n === 1 ? 'A brief' : `${n} briefs`} changed: ${fmtList(paths.map(project))}`,
+  },
+  {
+    test: (p) => p === 'index.md',
+    area: 'index',
+    significant: true,
+    line: () => '`index.md` changed — where a source of truth lives, or whether it is reachable',
+  },
+  {
+    test: (p) => p.startsWith('design/'),
+    area: 'design',
+    significant: true,
+    line: (n, paths) => `Design context changed: ${fmtList(paths.map(base))}`,
+  },
+  {
+    test: (p) => p.startsWith('engineering/'),
+    area: 'engineering',
+    significant: false,
+    line: (n) => `${n} engineering ${plural(n, 'file')} updated`,
+  },
+  {
+    test: (p) => p.startsWith('product/procedures/'),
+    area: 'procedure',
+    significant: false,
+    line: (n) => `${n} ${plural(n, 'procedure')} updated`,
+  },
+  {
+    test: (p) => p.startsWith('deliverables/'),
+    area: 'project',
+    significant: false,
+    line: (n, paths) => `${n} ${plural(n, 'file')} under ${fmtList(unique(paths.map(project)))}`,
+  },
+  {
+    test: (p) => p.startsWith('comms/'),
+    area: 'comms',
+    significant: false,
+    line: (n) => `${n} raw ${plural(n, 'note')} filed in \`comms/\` — not canonical`,
+  },
+  {
+    test: (p) => p.startsWith('.claude/skills/'),
+    area: 'skills',
+    significant: false,
+    line: (n, paths) => `Skills changed: ${fmtList(unique(paths.map(skill)))}`,
+  },
+  {
+    test: (p) => p === 'CLAUDE.md',
+    area: 'routing',
+    significant: true,
+    line: () => 'The root `CLAUDE.md` changed — the file every session reads first',
+  },
+]
+
+const FALLBACK = {
+  area: 'other',
+  significant: false,
+  line: (n) => `${n} other ${plural(n, 'file')} changed`,
+}
+
+const base = (p) => `\`${p.split('/').pop()}\``
+const project = (p) => `\`${p.split('/')[1]}\``
+const skill = (p) => `\`/${p.split('/')[2]}\``
+const plural = (n, word) => (n === 1 ? word : `${word}s`)
+const unique = (xs) => [...new Set(xs)]
+
+function fmtList(items) {
+  const xs = unique(items)
+  if (xs.length <= 2) return xs.join(' and ')
+  return `${xs.slice(0, -1).join(', ')}, and ${xs[xs.length - 1]}`
+}
+
+/** Which route a single path belongs to. Exported so the tests can pin the table down. */
+export function classify(path) {
+  return ROUTES.find((r) => r.test(path)) ?? FALLBACK
+}
+
+/**
+ * @param {object} pr        - { number, title, url, author, branch, repo }
+ * @param {string[]} files   - repo-relative paths touched by the merge
+ * @returns {{ significant: boolean, headline: string, lines: string[], areas: string[], payload: object }}
+ */
+export function summarizeMerge(pr, files) {
+  const paths = unique(files.filter(Boolean))
+
+  // Group paths by route, preserving the ROUTES order so the message reads
+  // most-important-first rather than in whatever order git listed the files.
+  const groups = new Map()
+  for (const p of paths) {
+    const route = classify(p)
+    if (!groups.has(route)) groups.set(route, [])
+    groups.get(route).push(p)
+  }
+  const ordered = [...ROUTES, FALLBACK].filter((r) => groups.has(r))
+
+  const lines = ordered.map((r) => r.line(groups.get(r).length, groups.get(r)))
+  const areas = ordered.map((r) => r.area)
+  const significant = ordered.some((r) => r.significant)
+
+  const project = projectOf(paths)
+  const headline = project
+    ? `${titleCase(project)} — ${paths.length} ${plural(paths.length, 'file')} merged`
+    : `${paths.length} ${plural(paths.length, 'file')} merged`
+
+  return { significant, headline, lines, areas, payload: blocks(pr, headline, lines, paths) }
+}
+
+/** The single deliverable a merge is about, if there is exactly one. */
+function projectOf(paths) {
+  const projects = unique(
+    paths.filter((p) => p.startsWith('deliverables/')).map((p) => p.split('/')[1]),
+  )
+  return projects.length === 1 ? projects[0] : null
+}
+
+const titleCase = (slug) =>
+  slug.replace(/-/g, ' ').replace(/^./, (c) => c.toUpperCase())
+
+function blocks(pr, headline, lines, paths) {
+  const body = lines.map((l) => `• ${l}`).join('\n')
+  const author = pr.author ? ` · ${pr.author}` : ''
+
+  return {
+    text: `${headline} — ${lines.join('; ')}`, // notification + accessibility fallback
+    blocks: [
+      {
+        type: 'header',
+        text: { type: 'plain_text', text: headline, emoji: true },
+      },
+      {
+        type: 'section',
+        text: { type: 'mrkdwn', text: body },
+      },
+      {
+        type: 'context',
+        elements: [
+          {
+            type: 'mrkdwn',
+            text: `<${pr.url}|#${pr.number} ${pr.title}>${author} · merged into \`${pr.branch}\``,
+          },
+        ],
+      },
+    ],
+  }
+}

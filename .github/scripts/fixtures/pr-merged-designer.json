@@ -1,0 +1,12 @@
+{
+  "action": "closed",
+  "repository": { "full_name": "learn-this/webapp-context" },
+  "pull_request": {
+    "number": 42,
+    "title": "Enrollment userflow — new Figma pointer + states matrix",
+    "html_url": "https://github.com/learn-this/webapp-context/pull/42",
+    "merged": true,
+    "user": { "login": "wren-design" },
+    "base": { "ref": "main" }
+  }
+}

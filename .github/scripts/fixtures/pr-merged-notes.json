@@ -1,0 +1,12 @@
+{
+  "action": "closed",
+  "repository": { "full_name": "learn-this/webapp-context" },
+  "pull_request": {
+    "number": 41,
+    "title": "Raw notes from the enrollment userflow review",
+    "html_url": "https://github.com/learn-this/webapp-context/pull/41",
+    "merged": true,
+    "user": { "login": "marguerite-pm" },
+    "base": { "ref": "main" }
+  }
+}
