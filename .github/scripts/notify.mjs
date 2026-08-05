@@ -32,7 +32,11 @@ export async function listPullRequestFiles(repo, number, token, fetchImpl = fetc
     )
     if (!res.ok) throw new Error(`GitHub API ${res.status}: ${await res.text()}`)
     const batch = await res.json()
-    files.push(...batch.map((f) => f.filename))
+    // Keep the patch — the summary reads the actual change out of it, and this
+    // endpoint hands it over for free rather than costing another request.
+    files.push(
+      ...batch.map((f) => ({ filename: f.filename, status: f.status, patch: f.patch })),
+    )
     if (batch.length < 100) break
   }
   return files
