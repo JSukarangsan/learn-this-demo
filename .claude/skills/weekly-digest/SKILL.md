@@ -27,11 +27,16 @@ because writing is hard.
 4. **`deliverables/*/`** — the project `CLAUDE.md` and `brief.md`, for what "done" was supposed
    to mean, so you can say whether the week moved toward it.
 
-5. **`comms/`** — meeting notes and status reports dated inside the window.
+5. **`comms/notes/`** — meeting notes and transcripts dated inside the window.
    **Nothing here is canonical.** A thing said in a meeting is not a thing decided, so a
-   comms file can never put an item under *Decided*. What it's good for is the opposite:
+   notes file can never put an item under *Decided*. What it's good for is the opposite:
    a follow-up that was named and never became a decision entry is an *Open, not decided*
    line, and it's usually the one nobody else has noticed.
+
+6. **`comms/status/`** — last week's report, for one purpose only: **what you said was
+   moving that hasn't moved since.** Don't lift lines from it. It's a previous run of this
+   same skill, so quoting it compounds whatever it got wrong, and anything still true in
+   it is still true in the sources you already read.
 
 6. **`team/goals-and-okrs.md`** — what we're supposed to be moving. The update should say
    something about direction, not just list activity.
@@ -64,6 +69,10 @@ The backlog is the source of truth for scope. It lives in Notion and is reachabl
 Format, section order, and voice are in **`references/digest-format.md`**. Read it before
 writing a line. Then run `/copy` so the result lands on the clipboard in a shape that
 pastes cleanly into Slack.
+
+**Save it to `comms/status/<week-ending>-status-webapp.md`** — same content, before any
+hand-editing. That file is a record of what the team was told and when, which is the only
+thing it's good for; it is never a source for a later digest. See `comms/CLAUDE.md`.
 
 ## Stop and ask a human when
 

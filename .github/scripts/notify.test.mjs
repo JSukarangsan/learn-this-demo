@@ -41,10 +41,13 @@ describe('classify — the routing table', () => {
     assert.equal(classify('engineering/architecture.md').significant, false)
   })
 
-  test('raw comms are never significant', () => {
-    const r = classify('comms/2026-08-06-enrollment-review.md')
-    assert.equal(r.area, 'comms')
-    assert.equal(r.significant, false)
+  test('both comms subfolders are routine, and are told apart', () => {
+    assert.equal(classify('comms/notes/2026-08-06-review.md').area, 'notes')
+    assert.equal(classify('comms/status/2026-08-03-status-webapp.md').area, 'status')
+    assert.equal(classify('comms/loose-file.md').area, 'comms')
+    for (const p of ['comms/notes/a.md', 'comms/status/b.md', 'comms/loose-file.md']) {
+      assert.equal(classify(p).significant, false, `${p} should be routine`)
+    }
   })
 
   test('a project brief is significant but other project files are not', () => {
@@ -85,17 +88,17 @@ describe('summarizeMerge — the message', () => {
 
   test('lines come out most-important-first, not in the order git listed them', () => {
     const s = summarizeMerge(PR, [
-      'comms/2026-08-06-review.md',
+      'comms/notes/2026-08-06-review.md',
       'engineering/constraints.md',
       'product/decisions/2026-08-06-x.md',
     ])
-    assert.deepEqual(s.areas, ['decision', 'constraint', 'comms'])
+    assert.deepEqual(s.areas, ['decision', 'constraint', 'notes'])
   })
 
   test('a comms-only merge is routine', () => {
-    const s = summarizeMerge(PR, ['comms/2026-08-06-enrollment-review.md'])
+    const s = summarizeMerge(PR, ['comms/notes/2026-08-06-enrollment-review.md'])
     assert.equal(s.significant, false)
-    assert.equal(s.lines[0], '1 raw note filed in `comms/` — not canonical')
+    assert.equal(s.lines[0], '1 raw note filed in `comms/notes/` — not canonical')
   })
 
   test('singular and plural both read correctly', () => {
@@ -153,7 +156,7 @@ describe('run — the decision to post', () => {
       },
       {
         log: quiet,
-        files: ['comms/2026-08-06-enrollment-review.md'],
+        files: ['comms/notes/2026-08-06-enrollment-review.md'],
         fetchImpl: () => assert.fail('should not have posted a routine merge'),
       },
     )
@@ -171,7 +174,7 @@ describe('run — the decision to post', () => {
       },
       {
         log: quiet,
-        files: ['comms/2026-08-06-enrollment-review.md'],
+        files: ['comms/notes/2026-08-06-enrollment-review.md'],
         fetchImpl: async () => {
           called = true
           return { ok: true, status: 200, text: async () => 'ok' }

@@ -30,9 +30,11 @@ and two of them are wrong for our purposes.
 - `engineering/` — our service boundaries and the things you must not do
 - `design/` — tokens, plus the rules that aren't in the tokens
 - `insights/` — what our metrics actually mean. Read this before any number.
-- `comms/` — our meeting notes, transcripts, status reports. **Raw, and not canonical** — a
-  thing said in a meeting is not a thing decided. Check `product/decisions/` before you
-  report anything from here as settled.
+- `comms/notes/` — meeting notes and transcripts. **Raw, and not canonical** — a thing said
+  in a meeting is not a thing decided. Check `product/decisions/` before you report
+  anything from here as settled.
+- `comms/status/` — status reports we've sent. **Derived, not authored** — generated from
+  the rest of the repo, so if one disagrees with its source, the source wins.
 - `deliverables/` — one folder per piece of work in flight. Changes daily.
 
 ## What isn't ours to hold

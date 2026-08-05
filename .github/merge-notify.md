@@ -22,7 +22,8 @@ landed in decides whether anyone hears about it.
 the glossary · anything in `team/` · a project `brief.md` · `index.md` · `design/` ·
 the root `CLAUDE.md`
 
-**Stays quiet** · raw notes in `comms/` · notes inside a project folder · skill edits ·
+**Stays quiet** · raw notes in `comms/notes/` · archived reports in `comms/status/`, which
+the team already read in this channel · notes inside a project folder · skill edits ·
 procedures
 
 That split is the same one the kit's `CLAUDE.md` files already describe — which is the

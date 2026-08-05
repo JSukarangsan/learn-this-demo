@@ -97,7 +97,7 @@ Real output, week of Aug 3.
   (Backlog 7; deliverables/cohort-scheduling/brief.md)
 - Editing a schedule after the cohort starts came up again Tuesday and was left where it
   was. Named as a follow-up, never written up.
-  (comms/2026-08-04-cohort-scheduling-review.md)
+  (comms/notes/2026-08-04-cohort-scheduling-review.md)
 - Offline mode is still a request, not a plan — Instructor Tools hasn't agreed to the
   content-model change. (product/decisions/2026-07-02-offline-mode.md, status: proposed)
 ```

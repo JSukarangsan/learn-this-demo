@@ -21,7 +21,8 @@ product/          decisions with a status · glossary · procedures
 engineering/      service boundaries, and the things you must not do
 design/           tokens.json, plus the judgment tokens can't hold
 insights/         what each metric means, and which source wins
-comms/            meeting notes and transcripts — raw, and not canonical
+comms/notes/      meeting notes and transcripts — raw input, never edited
+comms/status/     status reports we've sent — generated output, disposable
 
 deliverables/     one folder per piece of work in flight
   cohort-scheduling/
