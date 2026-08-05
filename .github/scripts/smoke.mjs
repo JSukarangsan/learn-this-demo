@@ -12,20 +12,49 @@
 import { summarizeMerge } from './summarize-merge.mjs'
 import { postToSlack } from './notify.mjs'
 
-// The beat-6 merge: the conflict resolved, so a decision, a constraint and the brief
+// The closing merge: the conflict settled, so a decision, a constraint and the brief
 // all move together. This is the message the demo is building toward.
 const PR = {
-  number: 44,
-  title: 'Lapsed-learner state: decision + brief update',
-  url: 'https://github.com/learn-this/webapp-context/pull/44',
-  author: 'marguerite-pm',
+  number: 3,
+  title: 'Schedule editing after start: decision + brief update',
+  url: 'https://github.com/JSukarangsan/learn-this-demo/pull/3',
+  author: 'wren-kelleher',
   branch: 'main',
 }
 
+// Patches shaped like the real thing — the summary is read out of these, so a
+// rehearsal without them would exercise a different code path than the Action does.
+const added = (lines) => lines.map((l) => '+' + l).join('\n')
+
 const FILES = [
-  'product/decisions/2026-08-06-lapsed-recording-access.md',
-  'engineering/constraints.md',
-  'deliverables/enrollment-userflow/brief.md',
+  {
+    filename: 'product/decisions/2026-08-05-no-schedule-edit-after-start.md',
+    status: 'added',
+    patch: added([
+      "# 2026-08-05 — A schedule can't be edited after a cohort starts",
+      '',
+      'status: decided',
+      '',
+      'Learners hold a calendar invite generated at enrollment that we cannot revoke,',
+      'so moving a session means re-issuing every one of them.',
+    ]),
+  },
+  {
+    filename: 'engineering/constraints.md',
+    status: 'modified',
+    patch: added([
+      '- **No session time or timezone change inside a cohort that has already started**,',
+      '  same path as an enrollment change, same reason.',
+    ]),
+  },
+  {
+    filename: 'deliverables/cohort-scheduling/brief.md',
+    status: 'modified',
+    patch: [
+      '+- Editing a schedule after the cohort has started — settled, see the decision log',
+      '-- Editing a schedule after the cohort has started — that needs the confirmation path',
+    ].join('\n'),
+  },
 ]
 
 const summary = summarizeMerge(PR, FILES)

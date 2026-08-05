@@ -1,19 +1,28 @@
 # Paste this at api.slack.com/apps → Create New App → From an app manifest.
-# Incoming webhook only — the app posts, and can read nothing.
+#
+# The bot for the Learn.this webapp team. It currently does one thing — posts a
+# summary when something significant merges into the context repo — but it's scoped
+# to grow: posting the weekly digest on a schedule, answering questions against the
+# context layer, filing notes back into comms/notes/.
+#
+# chat:write is here deliberately even though incoming-webhook alone covers today's
+# job. Adding a scope later means reinstalling the app and reissuing the webhook,
+# which is the kind of chore that gets discovered mid-demo.
 display_information:
-  name: Learn.this Repo
-  description: Posts a summary to the channel when something lands in the webapp team's context repo
+  name: Learn.this Bot
+  description: Team bot for the Learn.this webapp context layer — merge summaries, digests, and answers
   background_color: "#2b1a3d"
 
 features:
   bot_user:
-    display_name: Learn.this Repo
+    display_name: Learn.this Bot
     always_online: false
 
 oauth_config:
   scopes:
     bot:
-      - incoming-webhook
+      - incoming-webhook # posting merge summaries — the only one in use today
+      - chat:write # posting to a channel it's a member of, for what comes next
 
 settings:
   org_deploy_enabled: false

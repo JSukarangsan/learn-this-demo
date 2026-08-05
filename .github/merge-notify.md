@@ -34,18 +34,21 @@ Override with `NOTIFY_ALWAYS=true` if you want a routine merge to post during a 
 
 ## Setup — about five minutes, and it needs a browser
 
-1. **Create the Slack app.** [api.slack.com/apps](https://api.slack.com/apps) → *Create New
-   App* → *From scratch*. Name it `Learn.this Repo`, pick the demo workspace.
-2. **Turn on Incoming Webhooks.** *Features → Incoming Webhooks* → toggle *Activate* →
-   *Add New Webhook to Workspace* → choose `#learnthis-webapp-team`. Copy the URL.
-3. **Add it to the repo.** `gh secret set SLACK_WEBHOOK_URL --repo <owner>/<repo>`, paste
-   the URL. (Or *Settings → Secrets and variables → Actions*.)
-4. **Fire a test message** before you trust it:
+This posts through **Learn.this Bot**, the team's Slack app. Merge summaries are the only
+thing it does today; `slack-app-manifest.yml` explains what it's scoped for next.
+
+1. **Create the app.** [api.slack.com/apps](https://api.slack.com/apps) → *Create New App*
+   → *From an app manifest* → pick the workspace → paste `slack-app-manifest.yml`.
+2. **Invite it to the channel.** In Slack: `/invite @Learn.this Bot`. Private channels
+   don't appear in the webhook picker until the app is already in them.
+3. **Turn on Incoming Webhooks.** *Features → Incoming Webhooks* → toggle *Activate* →
+   *Add New Webhook to Workspace* → choose the channel. Copy the URL.
+4. **Wire it up and test in one step:**
    ```
-   SLACK_WEBHOOK_URL='https://hooks.slack.com/services/...' \
-     node .github/scripts/smoke.mjs
+   ./.github/setup-slack.sh 'https://hooks.slack.com/services/...'
    ```
-   That posts one realistic merge summary to the channel without needing a PR.
+   That sets the repo secret and posts one realistic merge summary, so you see it land
+   before you trust it. `node .github/scripts/smoke.mjs --dry` renders it locally instead.
 
 ## Running the tests
 
