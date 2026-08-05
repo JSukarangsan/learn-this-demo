@@ -1,0 +1,22 @@
+# Paste this at api.slack.com/apps → Create New App → From an app manifest.
+# Incoming webhook only — the app posts, and can read nothing.
+display_information:
+  name: Learn.this Repo
+  description: Posts a summary to the channel when something lands in the webapp team's context repo
+  background_color: "#2b1a3d"
+
+features:
+  bot_user:
+    display_name: Learn.this Repo
+    always_online: false
+
+oauth_config:
+  scopes:
+    bot:
+      - incoming-webhook
+
+settings:
+  org_deploy_enabled: false
+  socket_mode_enabled: false
+  token_rotation_enabled: false
+  is_hosted: false
