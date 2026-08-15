@@ -78,7 +78,7 @@ HTTP server and posts to it, so the network path is exercised rather than mocked
 
 ```
 GITHUB_EVENT_PATH=.github/scripts/fixtures/pr-merged-designer.json \
-NOTIFY_FILES='product/decisions/2026-08-06-x.md,deliverables/enrollment-userflow/brief.md' \
+NOTIFY_FILES='product/decisions/2026-08-06-x.md,projects/enrollment-userflow/brief.md' \
   node .github/scripts/notify.mjs
 ```
 

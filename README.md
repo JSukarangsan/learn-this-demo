@@ -24,15 +24,15 @@ insights/         what each metric means, and which source wins
 comms/notes/      meeting notes and transcripts — raw input, never edited
 comms/status/     status reports we've sent — generated output, disposable
 
-deliverables/     one folder per piece of work in flight
+projects/     one folder per piece of work in flight
   cohort-scheduling/
   video-playback-v2/
   search-relevance/
 
-.claude/skills/   /weekly-digest · /states-table · /refresh-index · /release-notes
+.claude/skills/   /build-update · /weekly-digest · /states-table · /refresh-index
 ```
 
-**It inherits downward.** Open Claude Code inside `deliverables/cohort-scheduling/` and it
+**It inherits downward.** Open Claude Code inside `projects/cohort-scheduling/` and it
 reads that folder, then `product/`, `engineering/`, `design/`, then the root. Nobody
 copies anything between them.
 
@@ -48,12 +48,12 @@ The same split decides what's worth a notification: see
 
 ## It holds pointers, not copies
 
-The product backlog is a Notion database. The UI is a Figma file. The ops calendar is in
-Drive. None of them are duplicated here — `context-manifest.yaml` carries an entry for each
-with its owner, a refresh cadence, whether a tool can reach it today, and when that was
-last confirmed.
+The tracked work is a Jira project. The UI is a Figma file. The ops calendar is in Drive.
+None of them are duplicated here — `context-manifest.yaml` carries an entry for each with
+its owner, a refresh cadence, whether a tool can reach it today, and when that was last
+confirmed.
 
-Two entries say `reachable: false`, and one of those adds `deliberate: true`. A pointer that
+Three entries say `reachable: false`, and one of those adds `deliberate: true`. A pointer that
 records something as authoritative and deliberately out of reach is a finished answer, not
 a to-do.
 

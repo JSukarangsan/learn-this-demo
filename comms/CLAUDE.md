@@ -40,7 +40,7 @@ before they go out. `2026-08-03-status-webapp.md`.
   genuinely useful when somebody says *nobody mentioned this*. They are not kept because
   they're true.
 
-## Why this isn't in `deliverables/`
+## Why this isn't in `projects/`
 
 A project folder holds what a project needs. Comms cuts across projects — one status
 report covers three of them, and one leadership review changes two roadmaps at once.

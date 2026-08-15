@@ -26,7 +26,7 @@ this says what to write.
 | Section | Comes from | Goes in only if |
 |---|---|---|
 | **Decided** | `product/decisions/` | `status: decided` **and** dated inside the window |
-| **Moving** | Notion rows edited inside the window, plus `deliverables/*/` | the `Status` or `Release` actually moved — not "work continued" |
+| **Moving** | Notion rows edited inside the window, plus `projects/*/` | the `Status` or `Release` actually moved — not "work continued" |
 | **Blocked** | a Notion row's `Depends On`, or a repo file that **says** it's blocked | a source states the block. Never inferred. |
 | **Open, not decided** | `status: proposed` entries, and Notion rows whose scope moved with nothing in the decision log behind it | the reader would otherwise assume it was settled |
 
@@ -81,7 +81,7 @@ Real output, week of Aug 3.
 - Cohort scheduling — schedule entry and pre-start editing are in build; the timezone
   picker is behind a flag. Hand-entered schedules are at 11 a month against 40 in May,
   and the brief's bar is zero for two consecutive weeks. Trending, not done.
-  (Backlog 1-4; deliverables/cohort-scheduling/brief.md)
+  (Backlog 1-4; projects/cohort-scheduling/brief.md)
 - Mobile enrollment funnel — the 320px pass moved to In build. Funnel target is 82% to
   88% and mobile is where the loss is. (Backlog 15; team/goals-and-okrs.md)
 - Course title normalization — owner moved to Instructor Tools. Title storage is their
@@ -94,7 +94,7 @@ Real output, week of Aug 3.
 **Open, not decided**
 - Calendar export moved from Cut back to Backlog after three instructor requests. The
   brief still says "out of scope, settled" and the decision log has nothing.
-  (Backlog 7; deliverables/cohort-scheduling/brief.md)
+  (Backlog 7; projects/cohort-scheduling/brief.md)
 - Editing a schedule after the cohort starts came up again Tuesday and was left where it
   was. Named as a follow-up, never written up.
   (comms/notes/2026-08-04-cohort-scheduling-review.md)

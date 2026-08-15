@@ -48,7 +48,7 @@ const FILES = [
     ]),
   },
   {
-    filename: 'deliverables/cohort-scheduling/brief.md',
+    filename: 'projects/cohort-scheduling/brief.md',
     status: 'modified',
     patch: [
       '+- Editing a schedule after the cohort has started — settled, see the decision log',

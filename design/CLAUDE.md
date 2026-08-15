@@ -22,3 +22,16 @@ The other half is judgment and has no schema. So: values in `tokens.json`, judgm
 ## What structure does hold
 
 `tokens.json` — the actual values. Don't describe them here. They'll drift.
+
+## `states/` — neither of the above
+
+Two files is still the rule for what a person writes here. `states/` is not that: it's
+output, written by `/states-table` from the Figma file and the rest of the layer, one file
+per flow, overwritten each run.
+
+- **Derived, not authored**, the same way `../comms/status/` is. If a states table
+  disagrees with Figma or `../product/glossary.md`, they win and it's stale.
+- **Don't hand-edit it and don't cite it as a source.** Fixing a line here fixes one
+  document until the next run. Fix the frame, or the file the reason came from.
+- It's kept so a coverage question can be answered by someone without Figma open, and so
+  two people arguing about what's designed are arguing about the same matrix.

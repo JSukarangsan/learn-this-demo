@@ -1,0 +1,15 @@
+Issue key,Summary,Issue Type,Status,Priority,Assignee,Labels,Description,Blocked by,Created,Updated
+LTHIS-1,Set a schedule at cohort creation,Story,In build,High,Wren,cohort-scheduling,"Dates, times and duration entered by the instructor at creation. In scope per the brief.",,2026-06-15,2026-08-12
+LTHIS-2,Edit a schedule before the cohort starts,Story,In build,High,Wren,cohort-scheduling,Pre-start editing only. Editing after start is out of scope and needs the instructor-confirmation path.,,2026-06-15,2026-08-13
+LTHIS-3,Cohort timezone picker,Story,Behind flag,High,Wren,cohort-scheduling,Behind a flag pending the checklist. Not shipped.,,2026-06-20,2026-08-14
+LTHIS-4,Render session times in the cohort timezone everywhere,Story,In build,Medium,Ines Okafor,cohort-scheduling,Every surface that shows a session time.,,2026-06-20,2026-08-11
+LTHIS-7,External calendar sync,Story,Backlog,Medium,,cohort-scheduling,Moved from Cut back to Backlog on Aug 11 after three instructor requests came in through support.,,2026-04-02,2026-08-11
+LTHIS-9,Vendor SDK upgrade for session recording,Task,Blocked,High,Tobias Ferro,video-playback,Pinned to the current SDK until the regression pass runs.,LTHIS-10,2026-07-20,2026-08-03
+LTHIS-10,Session-recording regression pass,Task,Backlog,High,Marguerite,instructor-tools,Owned by Instructor Tools. Requested Jul 28 and still not scheduled.,,2026-07-28,2026-07-28
+LTHIS-12,Course title normalization,Story,Backlog,Low,Marguerite,search-relevance,Owner moved to Instructor Tools on Aug 10. Title storage is their content model so the fix was never ours to make.,,2026-05-11,2026-08-10
+LTHIS-15,Mobile enrollment 320px pass,Story,In build,High,Ines Okafor,enrollment,Moved to In build on Aug 12. Funnel target is 82 to 88 and mobile is where the loss is.,,2026-07-06,2026-08-12
+LTHIS-18,Timezone model: per cohort or per learner,Story,Blocked,High,Wren,cohort-scheduling,Blocked pending a product call on whether the timezone is set per cohort or per learner. Not touched since Jul 29.,,2026-07-15,2026-07-29
+LTHIS-21,Offline mode,Epic,In build,Medium,Tobias Ferro,offline,Depends on a content model change owned by Instructor Tools.,,2026-07-02,2026-08-13
+LTHIS-23,Lapsed learner: recordings-expired empty state,Story,Backlog,Medium,Ines Okafor,design-debt,Raised by the states audit on Aug 5. Recordings stay available for 12 months and nothing is designed for after that.,,2026-08-05,2026-08-05
+LTHIS-25,Inline enrollment confirmation,Story,Shipped,High,Wren,enrollment,All seven checklist steps passed 2026-07-30 with the flag off.,,2026-05-20,2026-07-30
+LTHIS-27,Catalog search ranking,Story,Backlog,Low,,search-relevance,Mostly a titling problem rather than a ranking problem. See LTHIS-12.,,2026-05-11,2026-06-02

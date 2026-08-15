@@ -1,0 +1,52 @@
+name: Refresh context
+
+# Reads context-manifest.yaml, pulls each source that declares a summarize_to,
+# summarizes it, writes the result into team/_generated/ and opens a PR.
+#
+# A PR rather than a direct commit, on purpose. The pipeline proposes; a person
+# confirms. That is the same rule /refresh-index follows, and it is what keeps a
+# bad summary from quietly becoming the team's context.
+
+on:
+  schedule:
+    - cron: '0 6 * * 1' # Mondays, 06:00 UTC — before the weekly update goes out
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Fetch and report, but do not summarize or write'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Resolve pointers and summarize
+        id: refresh
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+        run: |
+          node .github/scripts/refresh-context.mjs \
+            ${{ inputs.dry_run && '--dry-run' || '' }} | tee refresh-report.txt
+
+      - name: Open a PR if anything changed
+        if: steps.refresh.outputs.changed == 'true' && !inputs.dry_run
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: context/refresh
+          title: 'Refresh generated context'
+          commit-message: 'chore: refresh generated context from manifest sources'
+          body-path: refresh-report.txt
+          delete-branch: true
+          labels: context

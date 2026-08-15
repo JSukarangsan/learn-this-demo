@@ -245,7 +245,7 @@ const ROUTES = [
     line: (n, paths) => `Something about how the team works changed — ${fmtList(paths.map(plainFile))}`,
   },
   {
-    test: (p) => /^deliverables\/[^/]+\/brief\.md$/.test(p),
+    test: (p) => /^projects\/[^/]+\/brief\.md$/.test(p),
     area: 'brief',
     significant: true,
     detail: briefDetail,
@@ -282,7 +282,7 @@ const ROUTES = [
     line: (n) => `${n} of our ${plural(n, 'checklist')} changed`,
   },
   {
-    test: (p) => p.startsWith('deliverables/'),
+    test: (p) => p.startsWith('projects/'),
     area: 'project',
     significant: false,
     detail: projectDetail,
@@ -334,7 +334,7 @@ const base = (p) => `\`${p.split('/').pop()}\``
 /** `team/goals-and-okrs.md` -> `goals and okrs`. Filenames read as English. */
 const plainFile = (p) =>
   p.split('/').pop().replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ')
-/** `deliverables/cohort-scheduling/x` -> `*cohort scheduling*`. */
+/** `projects/cohort-scheduling/x` -> `*cohort scheduling*`. */
 const plainProject = (p) => `*${p.split('/')[1].replace(/-/g, ' ')}*`
 const project = (p) => `\`${p.split('/')[1]}\``
 const skill = (p) => `\`/${p.split('/')[2]}\``
@@ -400,7 +400,7 @@ export function summarizeMerge(pr, files) {
 /** The single deliverable a merge is about, if there is exactly one. */
 function projectOf(paths) {
   const projects = unique(
-    paths.filter((p) => p.startsWith('deliverables/')).map((p) => p.split('/')[1]),
+    paths.filter((p) => p.startsWith('projects/')).map((p) => p.split('/')[1]),
   )
   return projects.length === 1 ? projects[0] : null
 }

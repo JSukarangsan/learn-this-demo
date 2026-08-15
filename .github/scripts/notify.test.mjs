@@ -51,15 +51,15 @@ describe('classify — the routing table', () => {
   })
 
   test('a project brief is significant but other project files are not', () => {
-    assert.equal(classify('deliverables/enrollment-userflow/brief.md').area, 'brief')
-    assert.equal(classify('deliverables/enrollment-userflow/notes/raw.md').area, 'project')
-    assert.equal(classify('deliverables/enrollment-userflow/notes/raw.md').significant, false)
+    assert.equal(classify('projects/enrollment-userflow/brief.md').area, 'brief')
+    assert.equal(classify('projects/enrollment-userflow/notes/raw.md').area, 'project')
+    assert.equal(classify('projects/enrollment-userflow/notes/raw.md').significant, false)
   })
 
   test('design context counts wherever it is filed', () => {
     for (const p of [
       'design/tokens.json',
-      'deliverables/cohort-scheduling/design/session-list-states.md',
+      'projects/cohort-scheduling/design/session-list-states.md',
     ]) {
       assert.equal(classify(p).area, 'design', p)
       assert.equal(classify(p).significant, true, p)
@@ -88,8 +88,8 @@ describe('summarizeMerge — the message', () => {
   test("the designer's PR reads as design plus a project, and is significant", () => {
     const s = summarizeMerge(PR, [
       'design/enrollment-states.md',
-      'deliverables/enrollment-userflow/brief.md',
-      'deliverables/enrollment-userflow/notes/2026-08-06-review.md',
+      'projects/enrollment-userflow/brief.md',
+      'projects/enrollment-userflow/notes/2026-08-06-review.md',
     ])
 
     assert.equal(s.significant, true)
@@ -126,8 +126,8 @@ describe('summarizeMerge — the message', () => {
 
   test('the headline only names a project when exactly one is touched', () => {
     const two = summarizeMerge(PR, [
-      'deliverables/enrollment-userflow/brief.md',
-      'deliverables/search-relevance/brief.md',
+      'projects/enrollment-userflow/brief.md',
+      'projects/search-relevance/brief.md',
     ])
     assert.equal(two.headline, "2 updates to the team's context")
   })
@@ -205,7 +205,7 @@ describe('detail — reading the change, not just the folder', () => {
   test('a states matrix reports its coverage counts', () => {
     const s = summarizeMerge(PR, [
       {
-        filename: 'deliverables/cohort-scheduling/design/session-list-states.md',
+        filename: 'projects/cohort-scheduling/design/session-list-states.md',
         patch: patchOf([
           '# Session list — states coverage',
           '  ✓ Session list · desktop · default',
@@ -304,7 +304,7 @@ describe('run — the decision to post', () => {
     const res = await run(
       {
         GITHUB_EVENT_PATH: fixture('pr-merged-designer.json'),
-        NOTIFY_FILES: 'team/charter.md, deliverables/enrollment-userflow/brief.md',
+        NOTIFY_FILES: 'team/charter.md, projects/enrollment-userflow/brief.md',
       },
       { log: quiet, fetchImpl: () => assert.fail('should not have called the API') },
     )
@@ -409,7 +409,7 @@ describe('integration — a real POST over the wire', () => {
         {
           log: quiet,
           files: [
-            'deliverables/enrollment-userflow/brief.md',
+            'projects/enrollment-userflow/brief.md',
             'design/enrollment-states.md',
             'engineering/constraints.md',
           ],

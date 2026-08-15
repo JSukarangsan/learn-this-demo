@@ -4,7 +4,11 @@
 # never content. The moment a summary gets pasted in here there are two copies of it
 # and no way to tell which one is wrong.
 #
-# NOTHING IN THIS FILE REFRESHES ITSELF. Someone reads these entries and updates
+# Entries with a `summarize_to` are refreshed by .github/workflows/refresh-context.yml,
+# weekly, into team/_generated/ — as a PR, never a direct commit. Everything else in
+# here is confirmed by a person.
+#
+# THE DATES IN THIS FILE DO NOT REFRESH THEMSELVES. Someone reads these entries and updates
 # last_confirmed — about fifteen minutes a month, and it is the first thing here to go
 # stale. `/refresh-index` checks each pointer and proposes the edit; a person still
 # confirms it. The version that watches sources on its own does not exist yet.
@@ -21,19 +25,29 @@ quick_context: |
 
 sources:
   product_backlog:
-    canonical: "https://app.notion.com/p/3b3a901bd57d8146a6b6d48f1abdb851"
-    type: notion_database
+    canonical: "TODO — https://<your-site>.atlassian.net/jira/software/projects/LTHIS"
+    type: jira_project
+    project_key: "LTHIS" # TODO confirm on import
     owner: "Webapp PM"
-    reachable: true # via Notion MCP
+    reachable: false # TODO flip to true once the Jira MCP is connected. See .demo/session-2/README.md
     refresh: live
-    last_confirmed: 2026-08-05
+    last_confirmed: 2026-08-15
     notes: >
       Scope of record, and deliberately not a file in this repo. Requirements move
       faster than anyone will hand-copy into markdown, so a copy would be wrong within
-      a week and nobody would know which version was real. /weekly-digest reads it live.
-      The arrow only points one way — we know about the backlog, it knows nothing
-      about us. What this repo holds that the backlog doesn't is product/decisions/,
+      a week and nobody would know which version was real. /build-update reads it live.
+      The arrow only points one way — we know about the tracker, it knows nothing
+      about us. What this repo holds that the tracker doesn't is product/decisions/,
       which says *why* scope is what it is.
+      Blocked comes from the issue link and nothing else. A summary that reads like a
+      blocker is not one.
+    supersedes: >
+      A Notion database held this until 2026-08-15
+      (app.notion.com/p/3b3a901bd57d8146a6b6d48f1abdb851). It moved because the tracked
+      work belongs in the tracker the team already uses, and a demo that reaches past it
+      argues against itself. /weekly-digest still reads the Notion copy and has not been
+      repointed — two skills reading two different backlogs is a real inconsistency, not
+      a transitional state to leave alone.
 
   product_ui:
     canonical: "https://www.figma.com/design/YA4IogBXflpPsX5HEAm78o"
@@ -48,32 +62,52 @@ sources:
       described in prose.
 
   h2_planning:
-    canonical: "drive://Learn.this/Planning/H2 2026"
+    canonical: "https://docs.google.com/document/d/17ClPEZBETde-TQIMvdRYx3BhShulGq1_CctRZi23sLA"
     type: google_doc
     owner: "VP Product — not this team"
-    reachable: true # via Glean
+    reachable: true
+    fetch: "https://docs.google.com/document/d/17ClPEZBETde-TQIMvdRYx3BhShulGq1_CctRZi23sLA/export?format=txt"
     refresh: quarterly
-    last_confirmed: 2026-07-14
+    summarize_to: team/_generated/h2-planning.md
+    last_confirmed: 2026-08-05
     notes: >
       Authored a level up. team/charter.md and team/goals-and-okrs.md are summaries of
-      it. Regenerate them from here rather than editing them in place — maintaining a
-      second copy of somebody else's document is a race you lose.
+      it. Regenerate rather than editing in place — maintaining a second copy of somebody
+      else's document is a race you lose.
+    reachability_note: >
+      This demo fetches the doc directly, because it is link-shared and fiction. Most
+      teams cannot do that: Drive MCP and the Workspace CLI are not authorised for
+      everyone, and a real planning doc would not be link-shared anyway. Glean is the
+      path that works from inside the company, and it is covered in a later session.
 
   cohort_calendar:
-    canonical: "drive://Learn.this/Ops/Cohort calendar"
+    canonical: "https://docs.google.com/spreadsheets/d/1kk1rRAH5h2ze7S6iKIEh8qHzws8lcyNdlMny4WbfAl8"
     type: google_sheet
     owner: "Priyanka (Ops)"
-    reachable: true # via Glean
+    reachable: true
+    fetch: "https://docs.google.com/spreadsheets/d/1kk1rRAH5h2ze7S6iKIEh8qHzws8lcyNdlMny4WbfAl8/export?format=csv"
     refresh: weekly
-    last_confirmed: 2026-07-28
+    summarize_to: team/_generated/cohort-calendar.md
+    last_confirmed: 2026-08-05
+    notes: >
+      The floor on time-to-first-session is set here, not by anything we ship. Check it
+      before investigating a move in that metric — most investigations should end in the
+      first ten minutes with "it's the calendar."
+    reachability_note: >
+      Same caveat as h2_planning — direct fetch works here because it is link-shared
+      fiction. Glean is the route that works inside the company.
 
   instructor_nps:
-    canonical: "drive://Research/2026/Instructor NPS"
-    type: google_sheet
+    canonical: "https://app.notion.com/p/3b3a901bd57d819b91ddf531a047463f"
+    type: notion_page
     owner: "Insights"
-    reachable: true # via Glean
+    reachable: true # via Notion MCP
     refresh: quarterly
-    last_confirmed: 2026-07-28
+    summarize_to: team/_generated/instructor-nps.md
+    last_confirmed: 2026-08-05
+    notes: >
+      Raw read only. What any of it means is arbitrated in insights/definitions.md, which
+      lives in this repo — the survey does not get to define the metric.
 
   vendor_video_sla:
     canonical: "vendor portal, SSO only — no API"
@@ -81,8 +115,13 @@ sources:
     owner: "Tobias Ferro (Eng)"
     reachable: false
     workaround: "Export quarterly into insights/. That export is the copy of record."
+    copy_of_record: insights/vendor-video-sla-2026-q3.md
     refresh: quarterly
-    last_confirmed: 2026-07-14
+    last_confirmed: 2026-08-04
+    notes: >
+      Unreachable, but not unimportant — so a person exports it by hand and the export is
+      authoritative. Never summarize this one from upstream; there is no upstream to
+      reach. /refresh-index should check the export's date, not the portal.
 
   contract_terms:
     canonical: "Legal, counsel only"
@@ -109,8 +148,9 @@ local:
 
 # What a tool can actually reach from here today.
 available_connections:
-  - notion # the backlog
+  - jira # the tracked work
+  - notion # the NPS page
   - figma # the UI
-  - glean # Drive — planning, ops calendar, research
+  - google_drive # planning doc and ops calendar, fetched over link-shared export URLs
   # vendor portal: SSO only, no API
   # legal: deliberately not connected

@@ -26,6 +26,8 @@ and two of them are wrong for our purposes.
 ## Where to look
 
 - `team/` — our charter, goals, roadmap, stakeholders, who owns what, how we run. Changes rarely.
+- `team/_generated/` — summaries of documents other teams own, written by the refresh
+  pipeline from `context-manifest.yaml`. **Never edit these; the source wins.**
 - `product/` — decisions we've made, our glossary, why the product is the way it is
 - `engineering/` — our service boundaries and the things you must not do
 - `design/` — tokens, plus the rules that aren't in the tokens
@@ -35,7 +37,7 @@ and two of them are wrong for our purposes.
   anything from here as settled.
 - `comms/status/` — status reports we've sent. **Derived, not authored** — generated from
   the rest of the repo, so if one disagrees with its source, the source wins.
-- `deliverables/` — one folder per piece of work in flight. Changes daily.
+- `projects/` — one folder per piece of work in flight. Changes daily.
 
 ## What isn't ours to hold
 
@@ -44,6 +46,6 @@ it, `context-manifest.yaml` says where it lives, who owns it, and whether a tool
 it — a pointer, not a copy. Maintaining a copy of another team's document is a race you
 lose.
 
-The manifest is also where our own out-of-repo sources live: the Notion backlog, the Figma
+The manifest is also where our own out-of-repo sources live: the tracker, the Figma
 file, the ops calendar. **Nothing in it refreshes itself** — `/refresh-index` checks the
 pointers and proposes edits, and a person confirms them.

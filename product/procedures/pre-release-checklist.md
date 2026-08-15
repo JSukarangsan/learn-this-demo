@@ -10,7 +10,7 @@ walk you through it, the checklist has a gap — tell us which step.
 3. **Both learner types.** Walk it as a self-serve learner and as an org-assigned learner.
    They diverge at enrollment and at billing, every time.
 4. **Timezone.** Set your machine to a timezone that isn't the cohort's and walk the
-   schedule screens. This is where it breaks. See `../../deliverables/cohort-scheduling/`.
+   schedule screens. This is where it breaks. See `../../projects/cohort-scheduling/`.
 5. **Unsubscribe and exit paths still resolve in one click.** No new interstitials.
    See `../../engineering/constraints.md`.
 6. **Empty and error states have real copy.** Not lorem, not the default string.
