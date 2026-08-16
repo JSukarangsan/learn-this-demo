@@ -3,10 +3,15 @@
 The shape of the output, and the rules that keep it honest. `SKILL.md` says what to read;
 this says what to write.
 
+**One project per update.** The project is named once in the header and then never again —
+every line below it is that project's, so prefixing bullets with the project name is noise.
+If you find yourself wanting that prefix, the run is scoped too wide; go back to `SKILL.md`
+and pick one.
+
 ## The template
 
 ```
-**Build update — week of {date}**
+**Build update — {project}, week of {date}**
 
 **Needs a person**
 - {the join that fired} ({source}, {source})
@@ -15,7 +20,7 @@ this says what to write.
 - {what}, {on whom}, {since when} ({issue})
 
 **Moving**
-- {project} — {what changed}, {what's next} ({issues})
+- {what changed}, {what's next} ({issues})
 
 **Decided**
 - {decision} — {one line of why} ({file})
@@ -32,7 +37,7 @@ the top.
 |---|---|---|
 | **Needs a person** | the four joins in `SKILL.md` | two sources disagree, or one source knows something the other should have |
 | **Blocked** | an issue link that says blocked | a source states the block. Never inferred. |
-| **Moving** | issues whose `status` actually moved, plus `projects/*/` | the status moved. Not "work continued." |
+| **Moving** | issues whose `status` actually moved, plus `projects/<project>/` | the status moved. Not "work continued." |
 | **Decided** | `product/decisions/` | `status: decided` **and** dated inside the window |
 
 ## Needs a person — how to phrase each join
