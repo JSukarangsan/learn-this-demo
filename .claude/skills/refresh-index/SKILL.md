@@ -60,6 +60,21 @@ Then propose the edit — updated `last_confirmed` on confirmed entries, a corre
 `reachable`, and a flag on drifted ones. **Propose it. Don't apply it.** A human confirms
 what's canonical.
 
+## Then write the run down
+
+**Append the report to `team/_generated/refresh-log.md`, newest entry first.** Same standing
+as anything else in that folder: derived, not authored, and safe to delete.
+
+It exists for one reason. The manifest's failure mode is that nobody notices, and *"when did
+anyone last check this"* is unanswerable if the check only ever printed to somebody's
+terminal. The log turns that into a date you can read.
+
+Each entry is the date, one line per source, and the proposed edits as a diff. Keep it terse;
+this is a record that the check ran and what it saw, not a document anyone reads for pleasure.
+
+**Never edit an old entry.** If a later run disagrees with an earlier one, that disagreement
+is the useful part.
+
 ## The entries that are supposed to say no
 
 `reachable: false` with `deliberate: true` means counsel-only material, or anything where
