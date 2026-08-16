@@ -10,7 +10,8 @@ is the shape markdown is worst at — to answer one question you'd have to read 
 
 So it isn't authored and it isn't maintained. It's generated from the Figma file and the
 context layer every time someone asks, reported in the terminal, and left in
-`design/states/` as a **derived** artifact with the same standing as `comms/status/` — a
+`design/states/` as a **derived** artifact with the same standing as a project's
+`comms/*-status.md` — a
 convenience for people who weren't in the room, never a source. When the file disagrees
 with Figma or `product/glossary.md`, the file is the one that's wrong.
 
@@ -69,8 +70,9 @@ Write the same matrix to `design/states/<flow-slug>.md` — `signed-in-home.md`,
 `enrollment.md`. Create the folder if it isn't there. Report it in the terminal too; the
 file is in addition to the answer, not instead of it.
 
-**One file per flow, overwritten every run. Not a dated series.** `comms/status/` keeps its
-history because a status report is a record of what people were told and when. A states
+**One file per flow, overwritten every run. Not a dated series.** A project's `comms/`
+keeps its status history because a status report is a record of what people were told and
+when. A states
 table isn't a record of anything — it's a snapshot of coverage, and last month's is a wrong
 answer that still reads like a right one. The generated date goes in the header, not the
 filename.

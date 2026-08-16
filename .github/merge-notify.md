@@ -22,9 +22,8 @@ landed in decides whether anyone hears about it.
 the glossary · anything in `team/` · a project `brief.md` · `context-manifest.yaml` · `design/` ·
 the root `CLAUDE.md`
 
-**Stays quiet** · raw notes in `comms/notes/` · archived reports in `comms/status/`, which
-the team already read in this channel · notes inside a project folder · skill edits ·
-procedures
+**Stays quiet** · raw notes in a project's `comms/` · archived `-status.md` reports beside
+them, which the team already read in this channel · skill edits · procedures
 
 That split is the same one the kit's `CLAUDE.md` files already describe — which is the
 point to make out loud when this fires. The channel is readable because the folder

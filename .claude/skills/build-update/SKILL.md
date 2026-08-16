@@ -33,7 +33,7 @@ in the output rather than dressing it up.
    out of scope. The brief is the thing the tracker contradicts; `acceptance.md`, where it
    exists, is the thing "Shipped" has to satisfy.
 
-6. **`comms/notes/` and `projects/*/comms/`** — meeting notes dated inside the window.
+6. **`projects/*/comms/`, the files without a `-status` suffix** — meeting notes dated inside the window.
    Project meetings live with their project; the squad folder is for meetings that span
    projects.
    **Nothing here is canonical.** A thing said in a meeting is not a thing decided, so a
@@ -44,7 +44,7 @@ in the output rather than dressing it up.
 7. **`engineering/constraints.md`** and **`insights/definitions.md`** — before you call any
    move good or bad, or quote any number.
 
-8. **`comms/status/`** — the previous update, for one purpose only: **what you said was
+8. **`projects/*/comms/*-status.md`** — the previous update, for one purpose only: **what you said was
    moving that hasn't moved since.** Never lift lines from it. It is a previous run of this
    same skill, so quoting it compounds whatever it got wrong.
 
@@ -106,9 +106,12 @@ question for a person. It is never *"we decided to do offline mode."*
 Format, section order, and voice are in **`references/update-format.md`**. Read it before
 writing a line. Then run `/copy` so the result lands on the clipboard ready to paste.
 
-**Save it to `comms/status/<week-ending>-build-webapp.md`** — same content, before any
-hand-editing. That file records what the team was told and when, which is the only thing it
-is good for. It is never a source for a later update. See `comms/CLAUDE.md`.
+**Split it by project and save each share to `projects/<project>/comms/<week-ending>-status.md`**
+— same content, before any hand-editing. There is no squad-level `comms/`, so an update
+covering four projects lands as four files; a line that belongs to no project belongs to the
+project it blocks. Those files record what the team was told and when, which is the only
+thing they are good for. They are never a source for a later update. See
+`projects/CLAUDE.md`.
 
 ## Rules
 

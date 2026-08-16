@@ -29,7 +29,7 @@ Two files is still the rule for what a person writes here. `states/` is not that
 output, written by `/states-table` from the Figma file and the rest of the layer, one file
 per flow, overwritten each run.
 
-- **Derived, not authored**, the same way `../comms/status/` is. If a states table
+- **Derived, not authored**, the same way a `../projects/*/comms/*-status.md` is. If a states table
   disagrees with Figma or `../product/glossary.md`, they win and it's stale.
 - **Don't hand-edit it and don't cite it as a source.** Fixing a line here fixes one
   document until the next run. Fix the frame, or the file the reason came from.

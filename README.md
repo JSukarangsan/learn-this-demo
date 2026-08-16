@@ -21,12 +21,12 @@ product/          decisions with a status · glossary · procedures
 engineering/      service boundaries, and the things you must not do
 design/           tokens.json, plus the judgment tokens can't hold
 insights/         what each metric means, and which source wins
-comms/notes/      meetings that span projects — raw input, never edited
-comms/status/     status reports we've sent — generated output, disposable
 
 projects/         one folder per piece of work in flight
   cohort-scheduling/            in build — all four stages
-    comms/                        meetings about this project
+    comms/                        what was said, and what we told people
+      2026-08-04-...-review.md      raw input, never edited
+      2026-08-09-status.md          generated output, disposable
     deliverables/
       requirements/                 brief.md · acceptance.md
       research/                     the evidence the brief is built on
@@ -34,7 +34,7 @@ projects/         one folder per piece of work in flight
       launch/                       how it goes out, and what we watch after
   enrollment/                   shipped, still learning
   search-relevance/             scoped — requirements only
-  video-playback-v2/            not started — CLAUDE.md only
+  video-playback-v2/            not started — CLAUDE.md and status
 
 .claude/skills/   /build-update · /weekly-digest · /states-table · /refresh-index
 ```

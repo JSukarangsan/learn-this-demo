@@ -41,13 +41,26 @@ describe('classify — the routing table', () => {
     assert.equal(classify('engineering/architecture.md').significant, false)
   })
 
-  test('both comms subfolders are routine, and are told apart', () => {
-    assert.equal(classify('comms/notes/2026-08-06-review.md').area, 'notes')
-    assert.equal(classify('comms/status/2026-08-03-status-webapp.md').area, 'status')
-    assert.equal(classify('comms/loose-file.md').area, 'comms')
-    for (const p of ['comms/notes/a.md', 'comms/status/b.md', 'comms/loose-file.md']) {
+  test('both kinds of comms file are routine, and are told apart by the -status suffix', () => {
+    // They share a folder now, so the suffix is the only discriminator. Get this wrong
+    // and a generated report gets announced as evidence of what was said in a room.
+    assert.equal(classify('projects/cohort-scheduling/comms/2026-08-06-review.md').area, 'notes')
+    assert.equal(classify('projects/cohort-scheduling/comms/2026-08-09-status.md').area, 'status')
+    for (const p of [
+      'projects/cohort-scheduling/comms/a.md',
+      'projects/cohort-scheduling/comms/b-status.md',
+    ]) {
       assert.equal(classify(p).significant, false, `${p} should be routine`)
     }
+  })
+
+  test('a status file does not read as a raw note just because it sits beside one', () => {
+    // The -status rule has to stay ABOVE the raw-notes rule. If it ever slips below,
+    // every generated report is reported as "what was said, not what was decided" —
+    // which inverts the one distinction this folder exists to draw.
+    const status = 'projects/video-playback-v2/comms/2026-08-09-status.md'
+    assert.equal(classify(status).area, 'status')
+    assert.notEqual(classify(status).area, 'notes')
   })
 
   test('a project brief is significant but other project files are not', () => {
@@ -63,7 +76,7 @@ describe('classify — the routing table', () => {
     const p = 'projects/enrollment-userflow/comms/2026-08-06-review.md'
     assert.equal(classify(p).area, 'notes')
     assert.equal(classify(p).significant, false)
-    assert.equal(classify('comms/notes/2026-08-06-review.md').area, 'notes')
+    assert.equal(classify('projects/enrollment-userflow/deliverables/launch/rollout.md').area, 'project')
   })
 
   test('design context counts wherever it is filed', () => {
@@ -99,7 +112,7 @@ describe('summarizeMerge — the message', () => {
     const s = summarizeMerge(PR, [
       'design/enrollment-states.md',
       'projects/enrollment-userflow/deliverables/requirements/brief.md',
-      'projects/enrollment-userflow/notes/2026-08-06-review.md',
+      'projects/enrollment-userflow/deliverables/launch/rollout.md',
     ])
 
     assert.equal(s.significant, true)
@@ -113,7 +126,7 @@ describe('summarizeMerge — the message', () => {
 
   test('lines come out most-important-first, not in the order git listed them', () => {
     const s = summarizeMerge(PR, [
-      'comms/notes/2026-08-06-review.md',
+      'projects/enrollment-userflow/comms/2026-08-06-review.md',
       'engineering/constraints.md',
       'product/decisions/2026-08-06-x.md',
     ])
@@ -121,7 +134,7 @@ describe('summarizeMerge — the message', () => {
   })
 
   test('a comms-only merge is routine', () => {
-    const s = summarizeMerge(PR, ['comms/notes/2026-08-06-enrollment-review.md'])
+    const s = summarizeMerge(PR, ['projects/enrollment-userflow/comms/2026-08-06-enrollment-review.md'])
     assert.equal(s.significant, false)
     assert.match(s.lines[0], /raw meeting notes filed — what was said, not what was decided/)
   })
@@ -282,7 +295,7 @@ describe('run — the decision to post', () => {
       },
       {
         log: quiet,
-        files: ['comms/notes/2026-08-06-enrollment-review.md'],
+        files: ['projects/enrollment-userflow/comms/2026-08-06-enrollment-review.md'],
         fetchImpl: () => assert.fail('should not have posted a routine merge'),
       },
     )
@@ -300,7 +313,7 @@ describe('run — the decision to post', () => {
       },
       {
         log: quiet,
-        files: ['comms/notes/2026-08-06-enrollment-review.md'],
+        files: ['projects/enrollment-userflow/comms/2026-08-06-enrollment-review.md'],
         fetchImpl: async () => {
           called = true
           return { ok: true, status: 200, text: async () => 'ok' }

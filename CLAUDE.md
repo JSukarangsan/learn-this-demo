@@ -32,16 +32,16 @@ and two of them are wrong for our purposes.
 - `engineering/` — our service boundaries and the things you must not do
 - `design/` — tokens, plus the rules that aren't in the tokens
 - `insights/` — what our metrics actually mean. Read this before any number.
-- `comms/notes/` — meeting notes and transcripts for meetings that **span projects**. A
-  meeting about one project is filed with that project. **Raw, and not canonical** — a
-  thing said in a meeting is not a thing decided. Check `product/decisions/` before you
-  report anything from here as settled.
-- `comms/status/` — status reports we've sent. **Derived, not authored** — generated from
-  the rest of the repo, so if one disagrees with its source, the source wins.
 - `projects/` — one folder per piece of work in flight. Changes daily. Each project holds
   its own `comms/` and a `deliverables/` split by stage of work. See `projects/CLAUDE.md`
   for the shape and the rule that keeps a project folder from becoming a second copy of
   everything above it.
+- `projects/*/comms/` — **there is no squad-level `comms/`; everything unprocessed lives
+  with its project.** Two kinds of file, not canonical for opposite reasons: raw meeting
+  notes (nobody has filtered them — a thing said in a meeting is not a thing decided,
+  check `product/decisions/` before reporting any of it as settled) and `-status.md`
+  files (somebody already filtered them — derived from the rest of the repo, so if one
+  disagrees with its source, the source wins).
 
 ## What isn't ours to hold
 

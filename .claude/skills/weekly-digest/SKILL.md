@@ -27,13 +27,13 @@ because writing is hard.
 4. **`projects/*/`** — the project `CLAUDE.md` and `deliverables/requirements/brief.md`, for what "done" was supposed
    to mean, so you can say whether the week moved toward it.
 
-5. **`comms/notes/` and `projects/*/comms/`** — meeting notes and transcripts dated inside the window.
+5. **`projects/*/comms/`, the files without a `-status` suffix** — meeting notes and transcripts dated inside the window.
    **Nothing here is canonical.** A thing said in a meeting is not a thing decided, so a
    notes file can never put an item under *Decided*. What it's good for is the opposite:
    a follow-up that was named and never became a decision entry is an *Open, not decided*
    line, and it's usually the one nobody else has noticed.
 
-6. **`comms/status/`** — last week's report, for one purpose only: **what you said was
+6. **`projects/*/comms/*-status.md`** — last week's reports, for one purpose only: **what you said was
    moving that hasn't moved since.** Don't lift lines from it. It's a previous run of this
    same skill, so quoting it compounds whatever it got wrong, and anything still true in
    it is still true in the sources you already read.
@@ -70,9 +70,12 @@ Format, section order, and voice are in **`references/digest-format.md`**. Read 
 writing a line. Then run `/copy` so the result lands on the clipboard in a shape that
 pastes cleanly into Slack.
 
-**Save it to `comms/status/<week-ending>-status-webapp.md`** — same content, before any
-hand-editing. That file is a record of what the team was told and when, which is the only
-thing it's good for; it is never a source for a later digest. See `comms/CLAUDE.md`.
+**Split it by project and save each share to `projects/<project>/comms/<week-ending>-status.md`**
+— same content, before any hand-editing. There is no squad-level `comms/`, so a digest that
+covers four projects lands as four files; a line that belongs to no project belongs to the
+project it blocks. Those files are a record of what the team was told and when, which is the
+only thing they're good for; they are never a source for a later digest. See
+`projects/CLAUDE.md`.
 
 ## Stop and ask a human when
 
