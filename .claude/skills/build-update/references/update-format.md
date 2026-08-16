@@ -37,11 +37,13 @@ the top.
 
 ## Needs a person — how to phrase each join
 
-**Join 1 — blocked on something already decided.** Name the ticket, the decision, and the
-gap in days. The gap is the point.
+**Join 1 — blocked on something already decided.** Name the ticket and name the decision.
+If the ticket has visibly not moved since the decision landed, say so; if the tracker's
+dates don't support that, don't reach for it. The join stands on the two documents, not on
+the gap between them.
 
-> - LTHIS-18 is blocked pending a call on the timezone model. That call was made on Aug 4
->   and the ticket has not been touched since Jul 29.
+> - LTHIS-18 is blocked pending a call on whether the timezone is set per cohort or per
+>   learner. That call was made on Aug 4 and the ticket is still Blocked.
 >   (LTHIS-18; product/decisions/2026-08-04-timezone-locked-at-creation.md)
 
 **Join 2 — designed, not tracked.** Name the frame. Do not speculate about why.
@@ -82,9 +84,9 @@ What a run over the week of Aug 10 should produce.
 **Build update — week of Aug 10**
 
 **Needs a person**
-- LTHIS-18 is blocked pending a call on the timezone model. That call was made on Aug 4
-  and the ticket has not been touched since Jul 29. Two weeks of a build item waiting on
-  an answer that exists.
+- LTHIS-18 is blocked pending a call on whether the timezone is set per cohort or per
+  learner. That call was made on Aug 4, it is in the decision log, and the ticket is
+  still sitting in Blocked. Nobody told the ticket.
   (LTHIS-18; product/decisions/2026-08-04-timezone-locked-at-creation.md)
 - Offline mode is in build and the decision behind it is still `proposed`. Instructor
   Tools has not agreed to the content-model change it depends on.

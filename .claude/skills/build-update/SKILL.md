@@ -50,14 +50,18 @@ in the output rather than dressing it up.
 truth for scope and it is deliberately not a file in this repo.
 
 - Read the project's issues over the Jira MCP. Fields that matter: `key`, `summary`,
-  `status`, `assignee`, `labels`, `updated`, and **issue links** — specifically what an
-  issue is *blocked by*.
+  `status`, `labels`, `updated`, and **issue links** — specifically what an issue is
+  *blocked by*.
 - **`updated` is a coarse signal. One bulk edit stamps the whole board.** If most of the
   project falls inside the window, that is a re-organisation, not a week of progress. Fall
   back to `status`: `In build` and `Behind flag` are Moving, `Shipped` needs a decision-log
   entry and a passed checklist before you claim it, and `Backlog` or `Cut` only appear if
   something says they changed.
 - **Blocked comes from the issue link, never from your reading of the summary.**
+- **Don't report the assignee as the owner.** Who a ticket is assigned to and who will
+  actually move it are frequently different people, which is the entire reason
+  `team/ownership.md` has a *who actually unblocks a review* column. Take the escalation
+  path from that table, not from the tracker.
 - If the tracker is unreachable, **say so in the update and continue.** An update that
   admits it is missing the tracker is fine. One that silently omits it is not.
 
