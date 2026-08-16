@@ -12,27 +12,49 @@ Two slides depend on this branch:
 
 ---
 
-## Before the session
+## The Jira
 
-### 1. Fix two things in the Jira UI — 5 minutes
+**Site:** `summerfriday-team.atlassian.net` · **Project:** *Learn.This Webapp Team*, key
+`SCRUM` · free plan, team-managed Scrum.
 
-The site already exists (*Learn.This Webapp Team*, free plan, team-managed Scrum).
+**Seeded 2026-08-16 over the Atlassian MCP.** `SCRUM-5` through `SCRUM-18`, statuses set,
+and `SCRUM-10 is blocked by SCRUM-11` linked. The board is ready.
 
-**Change the project key from `SCRUM` to `LTHIS`.** *Project settings → Details → Key*.
-Existing issues renumber, which is fine — the two sample tasks get deleted anyway. Do this
-before seeding, because `LTHIS-18` on screen reads like a real team's tracker and
-`SCRUM-18` reads like a template nobody configured. The worked example in
-`update-format.md` also cites those keys.
+| Key | | Status |
+|---|---|---|
+| SCRUM-5 | Set a schedule at cohort creation | In build |
+| SCRUM-6 | Edit a schedule before the cohort starts | In build |
+| SCRUM-7 | Cohort timezone picker | Behind flag |
+| SCRUM-8 | Render session times in the cohort timezone | In build |
+| **SCRUM-9** | **External calendar sync** | **Backlog** ← join 3 |
+| SCRUM-10 | Vendor SDK upgrade | Blocked, by SCRUM-11 |
+| SCRUM-11 | Session-recording regression pass | Backlog |
+| SCRUM-12 | Course title normalization | Backlog |
+| SCRUM-13 | Mobile enrollment 320px pass | In build |
+| **SCRUM-14** | **Timezone model: per cohort or per learner** | **Blocked** ← join 1 |
+| **SCRUM-15** | **Offline mode** (Epic) | **In build** ← join 4 |
+| SCRUM-16 | Lapsed learner: recordings-expired empty state | Backlog |
+| SCRUM-17 | Inline enrollment confirmation | Shipped |
+| SCRUM-18 | Catalog search ranking | Backlog |
 
-**Rename the board columns to the kit vocabulary.** *Project settings → Board*, or click a
-column header on the board. The seeder works without this — it maps `In build` onto
-`In Progress` and so on — but the names are on screen during the demo and two of them are
-load-bearing:
+## Still to do before the session
+
+### 1. Delete the four sample issues
+
+`SCRUM-1` to `SCRUM-4` — *Task 1*, *Task 2*, *Task 3*, *Subtask 2.1*. The Atlassian MCP has
+no delete tool, so this is a manual pass in the UI. `seed-jira.mjs reset` can also do it,
+but it deletes **everything** in the project including the seed.
+
+### 2. Rename the board columns
+
+*Project settings → Board*, or click a column header. **This is now required, not optional**
+— the issues were transitioned into the default statuses, so `SCRUM-10` and `SCRUM-14` are
+sitting in a column literally called *To Do* until you rename it.
 
 | Now | Rename to | Why it matters |
 |---|---|---|
 | Idea | Backlog | Join 3 is an item moving *back into* Backlog |
-| To Do | Blocked | The Blocked section reads off this |
+| To Do | Blocked | The Blocked section reads off this. **Two issues are parked here** |
 | In Progress | In build | |
 | Testing | Behind flag | |
 | Done | Shipped | |
@@ -41,44 +63,35 @@ load-bearing:
 rule collapses if they're the same, and that rule is one of the more useful things the
 skill teaches.
 
-Then delete the two sample tasks, or let `reset` do it.
+### 3. Optional — change the project key to `LTHIS`
 
-### 2. Seed it — 2 minutes
+*Project settings → Details*. Issue **numbers** are preserved, so `SCRUM-14` becomes
+`LTHIS-14` and nothing else has to change. Worth it because `LTHIS-14` on a screen reads
+like a real team's tracker and `SCRUM-14` reads like a template nobody configured.
 
-Create an API token at `id.atlassian.com/manage-profile/security/api-tokens`, then put it
-in `~/.learn-this-jira.env`. **That file lives outside the repo on purpose** and `*.env` is
-gitignored:
-
-```
-JIRA_SITE=https://<your-site>.atlassian.net
-JIRA_EMAIL=<the address you signed up with>
-JIRA_TOKEN=<the token>
-JIRA_PROJECT=LTHIS
-```
+If you do it, one command re-points every reference in this repo:
 
 ```bash
-node .demo/session-2/seed-jira.mjs inspect   # what your site actually has, and the mapping
-node .demo/session-2/seed-jira.mjs seed      # 14 issues, statuses, and the blocker link
-node .demo/session-2/seed-jira.mjs reset     # wipe it and start over
+grep -rl 'SCRUM-' --include='*.md' --include='*.csv' . | xargs sed -i '' 's/SCRUM-/LTHIS-/g'
 ```
 
-`inspect` first. It prints your real issue types and statuses and shows exactly which of
-them each seed status will land on, so you find out about a gap before the board is full of
-issues in the wrong column.
+### 4. What the seeder is still for
 
-**`reset` then `seed` is the rehearsal recovery.** If a run of the demo leaves the board
-messy, that's two commands and about thirty seconds.
+`seed-jira.mjs` needs an API token in `~/.learn-this-jira.env` (outside the repo; `*.env` is
+gitignored). It is no longer needed to *create* the board, but **`reset` then `seed` is the
+rehearsal recovery** — if a run of the demo leaves the board messy, that is two commands and
+about thirty seconds. Worth setting up the token for that alone.
 
-### 3. Point the manifest at it
-
-Fill in the two `TODO` fields in `context-manifest.yaml` → `sources.product_backlog` (site
-URL and project key) and flip `reachable` to `true`. Then connect the Jira MCP in Claude
-and confirm you can read the project.
+```bash
+node .demo/session-2/seed-jira.mjs inspect   # statuses, types, and the mapping
+node .demo/session-2/seed-jira.mjs reset     # delete everything in the project
+node .demo/session-2/seed-jira.mjs seed      # rebuild from jira-seed.csv
+```
 
 ### One thing the sandbox cannot do
 
 **Jira Cloud will not let an API client backdate `created` or `updated`.** Every seeded
-issue is stamped today. The seeder puts the meaningful date in the description instead
+issue is stamped 2026-08-16. The meaningful date is in the description instead
 (`Status last changed: 2026-08-11`).
 
 None of the four joins depend on those dates — they fire off status, issue links, and what
@@ -86,7 +99,7 @@ the repo says. But **don't build the spoken version around "this ticket has been
 two weeks,"** because the board on screen won't back you up. The line that does hold is
 *"the decision landed on Aug 4 and the ticket is still in Blocked."*
 
-### 2. Hide the finished skill
+### 5. Hide the finished skill
 
 `/build-update` is committed on this branch **as the safety net, not as the starting state.**
 You are building it live on slide 17. Before you present:
@@ -108,10 +121,10 @@ session.
 
 | Join | Fires because |
 |---|---|
-| **1 — blocked on something already decided** | `LTHIS-18` sits in Blocked pending a call on whether the timezone is per cohort or per learner. `product/decisions/2026-08-04-timezone-locked-at-creation.md` made that call on Aug 4 and nobody told the ticket. |
-| **2 — designed, not tracked** | The Figma file has `desktop-1024 · self-serve · error` (`20:119`) and three 40px mobile nav buttons against a 44 minimum in `design/tokens.json`. Neither has a ticket. Deliberately, `LTHIS-23` *does* cover the lapsed-empty gap, so this reads as a finding rather than a flood. |
-| **3 — scope moved, nothing written down** | `LTHIS-7` moved Cut → Backlog on Aug 11. `projects/cohort-scheduling/brief.md` still says "out of scope, settled." The decision log is silent. |
-| **4 — a proposal reported as a plan** | `LTHIS-21` offline mode is In build. `product/decisions/2026-07-02-offline-mode.md` is `status: proposed` and Instructor Tools has not agreed. |
+| **1 — blocked on something already decided** | `SCRUM-14` sits in Blocked pending a call on whether the timezone is per cohort or per learner. `product/decisions/2026-08-04-timezone-locked-at-creation.md` made that call on Aug 4 and nobody told the ticket. |
+| **2 — designed, not tracked** | The Figma file has `desktop-1024 · self-serve · error` (`20:119`) and three 40px mobile nav buttons against a 44 minimum in `design/tokens.json`. Neither has a ticket. Deliberately, `SCRUM-16` *does* cover the lapsed-empty gap, so this reads as a finding rather than a flood. |
+| **3 — scope moved, nothing written down** | `SCRUM-9` moved Cut → Backlog on Aug 11. `projects/cohort-scheduling/brief.md` still says "out of scope, settled." The decision log is silent. |
+| **4 — a proposal reported as a plan** | `SCRUM-15` offline mode is In build. `product/decisions/2026-07-02-offline-mode.md` is `status: proposed` and Instructor Tools has not agreed. |
 
 The reporting window is **Aug 10–16** — Monday to Sunday, per `team/how-we-work.md`. Nothing
 was decided inside it, which is the honest answer and worth saying out loud: the Decided
@@ -145,10 +158,10 @@ connector is the same, the data is invented, and the joins are what matter.
 
 ## Known gaps
 
-- [ ] Project key still `SCRUM`. Change it before seeding, or the docs cite keys that don't
-      exist. The seeder warns if they drift.
-- [ ] Manifest still has `reachable: false` and two `TODO` fields.
-- [ ] `/weekly-digest` still reads the Notion backlog. Once `product_backlog` points at Jira,
+- [ ] Four sample issues (`SCRUM-1` to `SCRUM-4`) still on the board.
+- [ ] Board columns still have Jira's default names, so two issues sit in *To Do* when they
+      mean *Blocked*.
+- [ ] `/weekly-digest` still reads the Notion backlog. Now that `product_backlog` points at Jira,
       two skills in one repo read two different backlogs, which is exactly the incoherence a
       participant would catch. Either repoint it or retire it before Session 3.
 - [ ] The worked example in `references/update-format.md` is written from the seed data but

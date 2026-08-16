@@ -25,13 +25,13 @@ quick_context: |
 
 sources:
   product_backlog:
-    canonical: "TODO — https://<your-site>.atlassian.net/jira/software/projects/LTHIS"
+    canonical: "https://summerfriday-team.atlassian.net/jira/software/projects/SCRUM/boards/1"
     type: jira_project
-    project_key: "LTHIS" # TODO confirm on import
+    project_key: "SCRUM" # the project is named Learn.This Webapp Team; the key is Jira's default
     owner: "Webapp PM"
-    reachable: false # TODO flip to true once the Jira MCP is connected. See .demo/session-2/README.md
+    reachable: true # via the Atlassian MCP
     refresh: live
-    last_confirmed: 2026-08-15
+    last_confirmed: 2026-08-16
     notes: >
       Scope of record, and deliberately not a file in this repo. Requirements move
       faster than anyone will hand-copy into markdown, so a copy would be wrong within

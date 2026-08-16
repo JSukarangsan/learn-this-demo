@@ -42,9 +42,9 @@ If the ticket has visibly not moved since the decision landed, say so; if the tr
 dates don't support that, don't reach for it. The join stands on the two documents, not on
 the gap between them.
 
-> - LTHIS-18 is blocked pending a call on whether the timezone is set per cohort or per
+> - SCRUM-14 is blocked pending a call on whether the timezone is set per cohort or per
 >   learner. That call was made on Aug 4 and the ticket is still Blocked.
->   (LTHIS-18; product/decisions/2026-08-04-timezone-locked-at-creation.md)
+>   (SCRUM-14; product/decisions/2026-08-04-timezone-locked-at-creation.md)
 
 **Join 2 — designed, not tracked.** Name the frame. Do not speculate about why.
 
@@ -55,13 +55,13 @@ the gap between them.
 
 > - External calendar sync moved from Cut back to Backlog on Aug 11. The brief still says
 >   "out of scope, settled" and the decision log has nothing. Somebody changed their mind
->   and didn't write it down. (LTHIS-7; projects/cohort-scheduling/brief.md)
+>   and didn't write it down. (SCRUM-9; projects/cohort-scheduling/brief.md)
 
 **Join 4 — proposal in build.** Never state the proposal as the plan.
 
 > - Offline mode is in build and the decision behind it is still `proposed` — Instructor
 >   Tools has not agreed to the content-model change it depends on.
->   (LTHIS-21; product/decisions/2026-07-02-offline-mode.md, status: proposed)
+>   (SCRUM-15; product/decisions/2026-07-02-offline-mode.md, status: proposed)
 
 ## Rules
 
@@ -84,30 +84,30 @@ What a run over the week of Aug 10 should produce.
 **Build update — week of Aug 10**
 
 **Needs a person**
-- LTHIS-18 is blocked pending a call on whether the timezone is set per cohort or per
+- SCRUM-14 is blocked pending a call on whether the timezone is set per cohort or per
   learner. That call was made on Aug 4, it is in the decision log, and the ticket is
   still sitting in Blocked. Nobody told the ticket.
-  (LTHIS-18; product/decisions/2026-08-04-timezone-locked-at-creation.md)
+  (SCRUM-14; product/decisions/2026-08-04-timezone-locked-at-creation.md)
 - Offline mode is in build and the decision behind it is still `proposed`. Instructor
   Tools has not agreed to the content-model change it depends on.
-  (LTHIS-21; product/decisions/2026-07-02-offline-mode.md, status: proposed)
+  (SCRUM-15; product/decisions/2026-07-02-offline-mode.md, status: proposed)
 - External calendar sync moved from Cut back to Backlog on Aug 11 after three instructor
   requests. The brief still says "out of scope, settled" and the decision log has nothing.
-  (LTHIS-7; projects/cohort-scheduling/brief.md)
+  (SCRUM-9; projects/cohort-scheduling/brief.md)
 - The self-serve error state on desktop home is designed and has no ticket. So is the
   40px mobile nav button, which is under the 44 minimum in tokens.json.
   (Figma `01 · Home` 20:119, 21:7; design/tokens.json)
 
 **Blocked**
 - Vendor SDK upgrade, on a session-recording regression pass owned by Instructor Tools.
-  Two weeks, still not scheduled. Escalation path is Tobias. (LTHIS-9 blocked by LTHIS-10;
+  Two weeks, still not scheduled. Escalation path is Tobias. (SCRUM-10 blocked by SCRUM-11;
   team/ownership.md)
 
 **Moving**
 - Cohort scheduling — schedule entry and pre-start editing are in build, the timezone
   picker is behind a flag. Brief's bar is zero hand-entered schedules for two consecutive
-  weeks. Trending, not done. (LTHIS-1 to LTHIS-4; projects/cohort-scheduling/brief.md)
-- Mobile enrollment — the 320px pass moved to In build. (LTHIS-15)
+  weeks. Trending, not done. (SCRUM-5 to SCRUM-8; projects/cohort-scheduling/brief.md)
+- Mobile enrollment — the 320px pass moved to In build. (SCRUM-13)
 
 **Decided**
 - Nothing dated inside this window. The Aug 4 timezone decision is the most recent and it
