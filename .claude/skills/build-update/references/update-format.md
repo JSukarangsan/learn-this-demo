@@ -55,7 +55,7 @@ the gap between them.
 
 > - External calendar sync moved from Cut back to Backlog on Aug 11. The brief still says
 >   "out of scope, settled" and the decision log has nothing. Somebody changed their mind
->   and didn't write it down. (SCRUM-9; projects/cohort-scheduling/brief.md)
+>   and didn't write it down. (SCRUM-9; projects/cohort-scheduling/deliverables/requirements/brief.md)
 
 **Join 4 — proposal in build.** Never state the proposal as the plan.
 
@@ -93,7 +93,7 @@ What a run over the week of Aug 10 should produce.
   (SCRUM-15; product/decisions/2026-07-02-offline-mode.md, status: proposed)
 - External calendar sync moved from Cut back to Backlog on Aug 11 after three instructor
   requests. The brief still says "out of scope, settled" and the decision log has nothing.
-  (SCRUM-9; projects/cohort-scheduling/brief.md)
+  (SCRUM-9; projects/cohort-scheduling/deliverables/requirements/brief.md)
 - The self-serve error state on desktop home is designed and has no ticket. So is the
   40px mobile nav button, which is under the 44 minimum in tokens.json.
   (Figma `01 · Home` 20:119, 21:7; design/tokens.json)
@@ -106,7 +106,7 @@ What a run over the week of Aug 10 should produce.
 **Moving**
 - Cohort scheduling — schedule entry and pre-start editing are in build, the timezone
   picker is behind a flag. Brief's bar is zero hand-entered schedules for two consecutive
-  weeks. Trending, not done. (SCRUM-5 to SCRUM-8; projects/cohort-scheduling/brief.md)
+  weeks. Trending, not done. (SCRUM-5 to SCRUM-8; projects/cohort-scheduling/deliverables/requirements/brief.md)
 - Mobile enrollment — the 320px pass moved to In build. (SCRUM-13)
 
 **Decided**

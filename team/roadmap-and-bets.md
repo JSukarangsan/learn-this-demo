@@ -26,7 +26,7 @@ and re-arguing them from scratch each time is the cost this is meant to avoid.
   enough. Revisit only if mobile attendance passes 60%.
 - **Editing schedules after a cohort starts.** One instructor would have justified it and
   said themselves they wouldn't use it. See the interview notes in
-  `../projects/cohort-scheduling/notes/`.
+  `../projects/cohort-scheduling/comms/`.
 
 ## Sequencing constraint worth knowing
 

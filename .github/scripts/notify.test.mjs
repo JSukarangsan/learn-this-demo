@@ -51,9 +51,19 @@ describe('classify — the routing table', () => {
   })
 
   test('a project brief is significant but other project files are not', () => {
-    assert.equal(classify('projects/enrollment-userflow/brief.md').area, 'brief')
-    assert.equal(classify('projects/enrollment-userflow/notes/raw.md').area, 'project')
-    assert.equal(classify('projects/enrollment-userflow/notes/raw.md').significant, false)
+    assert.equal(classify('projects/enrollment-userflow/deliverables/requirements/brief.md').area, 'brief')
+    assert.equal(classify('projects/enrollment-userflow/deliverables/launch/rollout.md').area, 'project')
+    assert.equal(classify('projects/enrollment-userflow/deliverables/launch/rollout.md').significant, false)
+  })
+
+  test('raw notes stay raw inside a project, and do not read as a project update', () => {
+    // The projects/ catch-all sits below this rule on purpose. If it ever moves above,
+    // a meeting note becomes "1 update to enrollment userflow" — which claims the work
+    // moved when all that happened is somebody talked about it.
+    const p = 'projects/enrollment-userflow/comms/2026-08-06-review.md'
+    assert.equal(classify(p).area, 'notes')
+    assert.equal(classify(p).significant, false)
+    assert.equal(classify('comms/notes/2026-08-06-review.md').area, 'notes')
   })
 
   test('design context counts wherever it is filed', () => {
@@ -88,7 +98,7 @@ describe('summarizeMerge — the message', () => {
   test("the designer's PR reads as design plus a project, and is significant", () => {
     const s = summarizeMerge(PR, [
       'design/enrollment-states.md',
-      'projects/enrollment-userflow/brief.md',
+      'projects/enrollment-userflow/deliverables/requirements/brief.md',
       'projects/enrollment-userflow/notes/2026-08-06-review.md',
     ])
 
@@ -126,8 +136,8 @@ describe('summarizeMerge — the message', () => {
 
   test('the headline only names a project when exactly one is touched', () => {
     const two = summarizeMerge(PR, [
-      'projects/enrollment-userflow/brief.md',
-      'projects/search-relevance/brief.md',
+      'projects/enrollment-userflow/deliverables/requirements/brief.md',
+      'projects/search-relevance/deliverables/requirements/brief.md',
     ])
     assert.equal(two.headline, "2 updates to the team's context")
   })
@@ -304,7 +314,7 @@ describe('run — the decision to post', () => {
     const res = await run(
       {
         GITHUB_EVENT_PATH: fixture('pr-merged-designer.json'),
-        NOTIFY_FILES: 'team/charter.md, projects/enrollment-userflow/brief.md',
+        NOTIFY_FILES: 'team/charter.md, projects/enrollment-userflow/deliverables/requirements/brief.md',
       },
       { log: quiet, fetchImpl: () => assert.fail('should not have called the API') },
     )
@@ -409,7 +419,7 @@ describe('integration — a real POST over the wire', () => {
         {
           log: quiet,
           files: [
-            'projects/enrollment-userflow/brief.md',
+            'projects/enrollment-userflow/deliverables/requirements/brief.md',
             'design/enrollment-states.md',
             'engineering/constraints.md',
           ],

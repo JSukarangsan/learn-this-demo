@@ -28,10 +28,14 @@ in the output rather than dressing it up.
 
 4. **The design file** — every designed state for anything in build. See *Reaching design*.
 
-5. **`projects/*/`** — the project `CLAUDE.md` and `brief.md`, for what "done" was supposed
-   to mean and what was ruled out of scope. The brief is the thing the tracker contradicts.
+5. **`projects/*/`** — the project `CLAUDE.md`, then
+   `deliverables/requirements/` for what "done" was supposed to mean and what was ruled
+   out of scope. The brief is the thing the tracker contradicts; `acceptance.md`, where it
+   exists, is the thing "Shipped" has to satisfy.
 
-6. **`comms/notes/`** — meeting notes dated inside the window.
+6. **`comms/notes/` and `projects/*/comms/`** — meeting notes dated inside the window.
+   Project meetings live with their project; the squad folder is for meetings that span
+   projects.
    **Nothing here is canonical.** A thing said in a meeting is not a thing decided, so a
    notes file can never put an item under *Decided*. Its value is the reverse: a follow-up
    that was named and never became a decision entry is an *Open, not decided* line, and it

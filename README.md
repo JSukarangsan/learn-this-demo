@@ -21,16 +21,27 @@ product/          decisions with a status · glossary · procedures
 engineering/      service boundaries, and the things you must not do
 design/           tokens.json, plus the judgment tokens can't hold
 insights/         what each metric means, and which source wins
-comms/notes/      meeting notes and transcripts — raw input, never edited
+comms/notes/      meetings that span projects — raw input, never edited
 comms/status/     status reports we've sent — generated output, disposable
 
-projects/     one folder per piece of work in flight
-  cohort-scheduling/
-  video-playback-v2/
-  search-relevance/
+projects/         one folder per piece of work in flight
+  cohort-scheduling/            in build — all four stages
+    comms/                        meetings about this project
+    deliverables/
+      requirements/                 brief.md · acceptance.md
+      research/                     the evidence the brief is built on
+      design/                       states and flows for this project only
+      launch/                       how it goes out, and what we watch after
+  enrollment/                   shipped, still learning
+  search-relevance/             scoped — requirements only
+  video-playback-v2/            not started — CLAUDE.md only
 
 .claude/skills/   /build-update · /weekly-digest · /states-table · /refresh-index
 ```
+
+**The four projects don't look alike, and that's deliberate.** A folder appears when there
+is something to put in it, so you can read the state of the work off the tree. See
+[`projects/CLAUDE.md`](projects/CLAUDE.md).
 
 **It inherits downward.** Open Claude Code inside `projects/cohort-scheduling/` and it
 reads that folder, then `product/`, `engineering/`, `design/`, then the root. Nobody

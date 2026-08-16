@@ -15,7 +15,10 @@ mattered that week. Cite them the same way and you end up quoting a summary of a
 
 ## `notes/`
 
-Meeting notes and transcripts. `2026-08-04-cohort-scheduling-review.md`.
+Meeting notes and transcripts, for meetings that span projects. Currently empty — every
+meeting we've filed so far belonged to one project and lives with it. The folder stays
+because the *distinction* it draws against `status/` is the point, not because it has
+files in it.
 
 - **Raw is the point. Do not clean these up.** A tidied transcript has already thrown away
   the half-sentence that turns out to matter three weeks later.
@@ -40,11 +43,23 @@ before they go out. `2026-08-03-status-webapp.md`.
   genuinely useful when somebody says *nobody mentioned this*. They are not kept because
   they're true.
 
-## Why this isn't in `projects/`
+## What's here, and what's one level down
 
-A project folder holds what a project needs. Comms cuts across projects — one status
-report covers three of them, and one leadership review changes two roadmaps at once.
-Filing it under a project means the other two teams never find it.
+**A meeting about one project is filed with that project**, in
+`../projects/<project>/comms/`. This folder is for the rest: meetings that span projects,
+leadership reviews that change two roadmaps at once, anything where filing it under one
+project means the other two never find it.
+
+`status/` always stays here. One status report covers every project, so it belongs to
+none of them.
+
+The split is about **where someone would look**, not about who was in the room. A design
+review of the signup flow is enrollment's, even though three teams attended. The July
+instructor interviews are cohort scheduling's, even though what they said touches search.
+
+**The rules above apply identically down there, and matter more.** A note sitting in
+`projects/cohort-scheduling/comms/` is next to that project's requirements and is still
+not a requirement. Proximity to a spec is not authority.
 
 ## Dating
 

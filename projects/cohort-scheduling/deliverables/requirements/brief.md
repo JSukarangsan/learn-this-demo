@@ -15,8 +15,8 @@ each of which becomes a support thread with every learner in that cohort.
 - Recurring schedules
 - External calendar sync
 - Editing a schedule after the cohort has started — that needs the instructor-confirmation
-  path in `../../engineering/constraints.md` and isn't this project
+  path in `../../../../engineering/constraints.md` and isn't this project
 
 **Done when**
-All seven steps of `../../product/procedures/pre-release-checklist.md` pass with the flag
+All seven steps of `../../../../product/procedures/pre-release-checklist.md` pass with the flag
 still off, and ops has entered zero schedules by hand for two consecutive weeks.

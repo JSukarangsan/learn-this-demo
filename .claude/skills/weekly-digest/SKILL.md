@@ -24,10 +24,10 @@ because writing is hard.
 3. **The Notion backlog** — where requirements actually change. This repo does not hold a
    copy of it. See *Reaching Notion* below.
 
-4. **`projects/*/`** — the project `CLAUDE.md` and `brief.md`, for what "done" was supposed
+4. **`projects/*/`** — the project `CLAUDE.md` and `deliverables/requirements/brief.md`, for what "done" was supposed
    to mean, so you can say whether the week moved toward it.
 
-5. **`comms/notes/`** — meeting notes and transcripts dated inside the window.
+5. **`comms/notes/` and `projects/*/comms/`** — meeting notes and transcripts dated inside the window.
    **Nothing here is canonical.** A thing said in a meeting is not a thing decided, so a
    notes file can never put an item under *Decided*. What it's good for is the opposite:
    a follow-up that was named and never became a decision entry is an *Open, not decided*

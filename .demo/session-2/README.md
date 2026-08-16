@@ -123,7 +123,7 @@ session.
 |---|---|
 | **1 — blocked on something already decided** | `SCRUM-14` sits in Blocked pending a call on whether the timezone is per cohort or per learner. `product/decisions/2026-08-04-timezone-locked-at-creation.md` made that call on Aug 4 and nobody told the ticket. |
 | **2 — designed, not tracked** | The Figma file has `desktop-1024 · self-serve · error` (`20:119`) and three 40px mobile nav buttons against a 44 minimum in `design/tokens.json`. Neither has a ticket. Deliberately, `SCRUM-16` *does* cover the lapsed-empty gap, so this reads as a finding rather than a flood. |
-| **3 — scope moved, nothing written down** | `SCRUM-9` moved Cut → Backlog on Aug 11. `projects/cohort-scheduling/brief.md` still says "out of scope, settled." The decision log is silent. |
+| **3 — scope moved, nothing written down** | `SCRUM-9` moved Cut → Backlog on Aug 11. `projects/cohort-scheduling/deliverables/requirements/brief.md` still says "out of scope, settled." The decision log is silent. |
 | **4 — a proposal reported as a plan** | `SCRUM-15` offline mode is In build. `product/decisions/2026-07-02-offline-mode.md` is `status: proposed` and Instructor Tools has not agreed. |
 
 The reporting window is **Aug 10–16** — Monday to Sunday, per `team/how-we-work.md`. Nothing

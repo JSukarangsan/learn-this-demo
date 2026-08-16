@@ -81,7 +81,7 @@ Real output, week of Aug 3.
 - Cohort scheduling — schedule entry and pre-start editing are in build; the timezone
   picker is behind a flag. Hand-entered schedules are at 11 a month against 40 in May,
   and the brief's bar is zero for two consecutive weeks. Trending, not done.
-  (Backlog 1-4; projects/cohort-scheduling/brief.md)
+  (Backlog 1-4; projects/cohort-scheduling/deliverables/requirements/brief.md)
 - Mobile enrollment funnel — the 320px pass moved to In build. Funnel target is 82% to
   88% and mobile is where the loss is. (Backlog 15; team/goals-and-okrs.md)
 - Course title normalization — owner moved to Instructor Tools. Title storage is their
@@ -94,10 +94,10 @@ Real output, week of Aug 3.
 **Open, not decided**
 - Calendar export moved from Cut back to Backlog after three instructor requests. The
   brief still says "out of scope, settled" and the decision log has nothing.
-  (Backlog 7; projects/cohort-scheduling/brief.md)
+  (Backlog 7; projects/cohort-scheduling/deliverables/requirements/brief.md)
 - Editing a schedule after the cohort starts came up again Tuesday and was left where it
   was. Named as a follow-up, never written up.
-  (comms/notes/2026-08-04-cohort-scheduling-review.md)
+  (projects/cohort-scheduling/comms/2026-08-04-cohort-scheduling-review.md)
 - Offline mode is still a request, not a plan — Instructor Tools hasn't agreed to the
   content-model change. (product/decisions/2026-07-02-offline-mode.md, status: proposed)
 ```

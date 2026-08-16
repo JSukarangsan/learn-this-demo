@@ -19,6 +19,11 @@ Recurring schedules. Calendar sync. Both requested, both deferred — see
 
 ## Where the real material is
 
-- `brief.md` — the spec
-- `notes/2026-07-14-instructor-interview.md` — three instructors, unprocessed.
+- `deliverables/requirements/brief.md` — the spec
+- `deliverables/requirements/acceptance.md` — what "done" means, which is not "merged"
+- `deliverables/research/ops-error-audit.md` — the three wrong schedules, one by one.
+  This is the evidence the brief is built on.
+- `comms/2026-07-14-instructor-interview.md` — three instructors, unprocessed.
   The complaints are in here.
+- `comms/2026-08-04-cohort-scheduling-review.md` — the review that raised editing after
+  start and left it where it was. Named as a follow-up, never written up.
