@@ -150,9 +150,25 @@ const done = []
 const skipped = []
 const failed = []
 
+// The manifest's one rule, made executable. An entry either names a file in this repo
+// or it doesn't, and `refresh:` only means something on the ones that do. Catching this
+// here rather than in review is the point: a `refresh:` on a pointed-at source is
+// somebody assuming a copy exists, and the copy is what they'll go looking for.
+for (const [name, src] of Object.entries(sources)) {
+  const cached = src.summarize_to || src.copy_of_record
+  if (src.refresh && !cached) {
+    failed.push(`${name} — has \`refresh: ${src.refresh}\` but names no file in this repo. Either give it a path or drop the refresh.`)
+  }
+}
+
 for (const [name, src] of Object.entries(sources)) {
   if (!src.summarize_to) {
-    skipped.push(`${name} — no summarize_to (${src.refresh === 'live' ? 'read live' : 'held by a person'})`)
+    const why = src.copy_of_record
+      ? `a person maintains ${src.copy_of_record}`
+      : src.deliberate
+        ? 'deliberately out of reach'
+        : 'no copy in this repo, read the source'
+    skipped.push(`${name} — ${why}`)
     continue
   }
   if (src.reachable === false) {

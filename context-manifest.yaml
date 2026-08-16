@@ -4,9 +4,27 @@
 # never content. The moment a summary gets pasted in here there are two copies of it
 # and no way to tell which one is wrong.
 #
-# Entries with a `summarize_to` are refreshed by .github/workflows/refresh-context.yml,
-# weekly, into team/_generated/ — as a PR, never a direct commit. Everything else in
-# here is confirmed by a person.
+# EVERY ENTRY IS ONE OF TWO THINGS, and the test is whether it names a file in this repo.
+#
+#   Cached      the entry names a path, so a copy exists here. `refresh:` says how often
+#               it gets rebuilt. A pipeline writes `summarize_to`; a person writes
+#               `copy_of_record` when there is no API to automate. Both are caches.
+#               Cache a source when its truth holds for months. The planning doc, the
+#               OKRs, how the team works.
+#
+#   Pointed at  no path, so no copy, so no `refresh:` and nothing to go stale. Read the
+#               source. This is the right answer for anything that changes faster than
+#               anyone would rewrite a summary: the backlog, the design file.
+#
+# For a pointed-at source this file records HOW TO READ IT, never what it says. A note
+# about how frames are named belongs here and stays true for years. The frames do not.
+#
+# There is no third option. If you are tempted to cache the backlog because it feels like
+# capturing context, the copy is wrong within a week and nobody can tell which version is.
+#
+# Entries with a `summarize_to` are rebuilt by .github/workflows/refresh-context.yml into
+# team/_generated/, as a PR and never a direct commit. Everything else is confirmed by a
+# person.
 #
 # THE DATES IN THIS FILE DO NOT REFRESH THEMSELVES. Someone reads these entries and updates
 # last_confirmed — about fifteen minutes a month, and it is the first thing here to go
@@ -30,7 +48,6 @@ sources:
     project_key: "SCRUM" # the project is named Learn.This Webapp Team; the key is Jira's default
     owner: "Webapp PM"
     reachable: true # via the Atlassian MCP
-    refresh: live
     last_confirmed: 2026-08-16
     notes: >
       Scope of record, and deliberately not a file in this repo. Requirements move
@@ -54,7 +71,6 @@ sources:
     type: figma
     owner: "Ines Okafor (Design)"
     reachable: true # via Figma MCP
-    refresh: live
     last_confirmed: 2026-08-05
     notes: >
       Design system and product UI. Frames are named `Screen / viewport / state`.

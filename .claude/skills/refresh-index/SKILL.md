@@ -12,28 +12,49 @@ way they trip over a stale status.
 
 So it needs a deliberate check. That's this.
 
+## First, sort each entry into one of two piles
+
+**Does it name a file in this repo?** `summarize_to` or `copy_of_record` means yes.
+
+That answer decides what you're checking. An entry with a copy can be out of date. An
+entry without one cannot, because there is nothing here to be out of date. Asking a
+pointed-at source whether it has drifted is asking a question it doesn't have.
+
 ## What to do
 
-For every entry under `sources:`:
+For **every** entry:
 
-1. **Does `canonical` still resolve?** Follow it. A `drive://` or Glean-backed entry means
-   searching for it; a local path means checking the file exists.
-2. **Has the source changed since `last_confirmed`?** If it exposes a modified date,
-   compare. If it doesn't, say so rather than guessing.
-3. **Is `reachable` still true?** This is the field that goes stale quietly — permissions
-   change, files move, a connector gets turned off.
-4. **Is the connection it needs still in `available_connections`?** An entry marked
-   `reachable: true` whose connection isn't listed is a contradiction, and it's usually the
-   manifest that's wrong rather than the connection.
+1. **Does `canonical` still resolve?** Follow it. A local path means checking the file
+   exists; a Glean-backed entry means searching for it.
+2. **Is `reachable` still true?** The field that goes stale quietly. Permissions change,
+   files move, a connector gets turned off.
+3. **Is the connection it needs still in `available_connections`?** An entry marked
+   `reachable: true` whose connection isn't listed is a contradiction, and it's usually
+   the manifest that's wrong rather than the connection.
+
+For **cached entries only**, one more:
+
+4. **Does the copy still match the source?** If the source exposes a modified date,
+   compare it to `last_confirmed`. **If it doesn't, say so rather than guessing** — several
+   connectors return content without a timestamp, and a confident `CONFIRMED` on a source
+   you can't date is worse than an honest `UNKNOWN`.
+
+**Never ask question 4 of a pointed-at source.** The backlog changed since `last_confirmed`.
+So did the design file. That's what they're for, it is not drift, and reporting it as drift
+trains people to ignore the report.
 
 ## What to report
 
 ```
-CONFIRMED    {key} — unchanged since {last_confirmed}
-DRIFTED      {key} — source modified {date}, last confirmed {last_confirmed}
+CONFIRMED    {key} — resolves, reachable{, and the copy still matches}
+DRIFTED      {key} — cached. source modified {date}, last confirmed {last_confirmed}
 UNREACHABLE  {key} — reachable: true, but isn't. {what happened}
-UNKNOWN      {key} — can't determine. {why}
+UNKNOWN      {key} — cached, and can't be dated. {which connector, and what it withholds}
 ```
+
+Say which pile each entry was in when it isn't obvious. "Resolves, reachable, no copy to
+check" is a complete and good result for a pointed-at source, and it should read like one
+rather than like something was skipped.
 
 Then propose the edit — updated `last_confirmed` on confirmed entries, a corrected
 `reachable`, and a flag on drifted ones. **Propose it. Don't apply it.** A human confirms
