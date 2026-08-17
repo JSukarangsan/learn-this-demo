@@ -78,6 +78,12 @@ same finding, still true. Update the existing row's date and say it's still open
 than adding a near-duplicate. A tracker with the same conflict logged four times reads as
 four problems, not one that's been ignored for a month.
 
+**Same check before writing a *Decided* row: check Key Decisions for one already citing
+that same file in `product/decisions/`.** A decision is written once and the file doesn't
+change, so if its path is already a row, it was reported in a prior run — skip it, don't
+append it again. This can happen even inside a single correctly-scoped window if the run
+gets invoked twice, so check regardless of whether the window logic looks right.
+
 **On the window, if this run doesn't fall on the Monday `how-we-work.md` assumes:** say
 what window you're using before you read anything, rather than silently guess which
 Monday–Sunday span applies. "Running this for the week of {date}, covering {range}" as
