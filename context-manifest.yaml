@@ -66,6 +66,28 @@ sources:
       repointed — two skills reading two different backlogs is a real inconsistency, not
       a transitional state to leave alone.
 
+  team_chat:
+    canonical: "#webapp, in the team's Slack workspace"
+    type: slack_channel
+    demo_channel: "#demo-learn-this — a private channel standing in for #webapp for this
+      kit, so a rehearsal doesn't post fictional chatter somewhere real colleagues would
+      see it"
+    owner: "Webapp team"
+    reachable: true # via the Slack MCP
+    last_confirmed: 2026-08-17
+    notes: >
+      Where a decision gets re-litigated informally before — or instead of — anyone
+      writing it up. /weekly-digest-expanded reads it for exactly one thing: a
+      conversation that treats something as settled when the tracker and the decision
+      log don't agree it is. A message here is evidence of what was said, never of what
+      was decided. Nothing in this channel can produce a Decided line.
+    reachability_note: >
+      This demo posts under one identity with speaker names inline in the message text,
+      not as distinct Slack users — reading multiple named voices out of a channel does
+      not require the posters to be real, separate accounts. Most teams can reach a
+      channel's history with a normal read scope; posting as visibly distinct people
+      needs chat:write.customize and is a heavier ask than this kit assumes by default.
+
   product_ui:
     canonical: "https://www.figma.com/design/YA4IogBXflpPsX5HEAm78o"
     type: figma
@@ -152,6 +174,29 @@ sources:
       knows this is better than one that goes looking. /refresh-index must never report
       this as drift.
 
+# Where /weekly-digest-expanded writes, not reads from. Same addressing-layer rule
+# applies: an ID here, never a copy of what the doc currently says.
+outputs:
+  weekly_digest_doc:
+    canonical: "https://docs.google.com/document/d/1J8aEG9WAov0xSIehqsopUHHJTu6bNE4F2pbzPbr2nAw"
+    type: google_doc
+    written_by: "/weekly-digest-expanded"
+    last_written: 2026-08-17
+
+  weekly_digest_tracker:
+    canonical: "https://docs.google.com/spreadsheets/d/14xv-ZWVQ1A9nqy1ral6sFns8XOeiRB7EAO7kZ3f2Ujo"
+    type: google_sheet
+    tabs: ["Key Decisions", "Risk Log"]
+    written_by: "/weekly-digest-expanded"
+    last_written: 2026-08-17
+    reachability_note: >
+      This demo writes both outputs over the gws CLI under Jon's own external-consultant
+      Google account, which carries full Docs/Sheets scopes. That is not what most teams
+      inside a company have — Drive MCP and the Workspace CLI are not authorised for
+      everyone, same caveat as h2_planning above. What this shows is the write-back half
+      of the loop working end to end once that access exists, not that it is universally
+      reachable today.
+
 # Written here and nowhere else. No upstream to point at, because this repo is the
 # system of record for them.
 local:
@@ -168,5 +213,8 @@ available_connections:
   - notion # the NPS page
   - figma # the UI
   - google_drive # planning doc and ops calendar, fetched over link-shared export URLs
+  - slack # #demo-learn-this, read-only — /weekly-digest-expanded
+  - google_docs_write, google_sheets_write # /weekly-digest-expanded's outputs, over gws
+    # CLI under Jon's own account — see outputs.weekly_digest_tracker.reachability_note
   # vendor portal: SSO only, no API
   # legal: deliberately not connected
