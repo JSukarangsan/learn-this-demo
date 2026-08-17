@@ -187,6 +187,7 @@ outputs:
   weekly_digest_doc:
     canonical: "https://docs.google.com/document/d/1J8aEG9WAov0xSIehqsopUHHJTu6bNE4F2pbzPbr2nAw"
     type: google_doc
+    write_mode: replace # current-state doc, not a log — see SKILL.md for the mechanism
     written_by: "/weekly-digest-expanded"
     last_written: 2026-08-17
 
@@ -194,6 +195,9 @@ outputs:
     canonical: "https://docs.google.com/spreadsheets/d/14xv-ZWVQ1A9nqy1ral6sFns8XOeiRB7EAO7kZ3f2Ujo"
     type: google_sheet
     tabs: ["Key Decisions", "Risk Log"]
+    write_mode: append_only # this is the historical log — a full-range write here
+      # destroys every prior week's rows. 10 rows in Key Decisions, 8 in Risk Log as of
+      # last_written; both counts should only ever go up.
     written_by: "/weekly-digest-expanded"
     last_written: 2026-08-17
     reachability_note: >

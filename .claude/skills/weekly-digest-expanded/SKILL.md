@@ -72,6 +72,20 @@ software. Wren said something, an instructor said something in an interview — 
 actual finding, and where each of them said it is citation, not the subject. See
 *Phrasing Needs a person* in `references/digest-format.md`.
 
+**Before writing a new *Needs a person* row, check the Risk Log for one already open on
+the same disagreement.** If it's still unresolved, that's not a new finding — it's the
+same finding, still true. Update the existing row's date and say it's still open, rather
+than adding a near-duplicate. A tracker with the same conflict logged four times reads as
+four problems, not one that's been ignored for a month.
+
+**On the window, if this run doesn't fall on the Monday `how-we-work.md` assumes:** say
+what window you're using before you read anything, rather than silently guess which
+Monday–Sunday span applies. "Running this for the week of {date}, covering {range}" as
+the first line back is enough. A silently wrong window is the single most common way a
+run of this skill's predecessors has looked broken when it wasn't — every mock content
+file in this kit is dated to a specific week on purpose, and the run only finds it if the
+window actually covers those dates.
+
 ## Then write it
 
 Format, section order, and voice are in **`references/digest-format.md`**. Read it before
@@ -79,13 +93,28 @@ writing a line.
 
 **Write to four places, from the same run, in this order:**
 
-1. `weeklydigest.md` at the repo root — the record of what this run produced.
-2. The Google Doc at `context-manifest.yaml` → `outputs.weekly_digest_doc`, as the
-   formatted version people actually read. Full content, not a summary of the file.
-3. The tracker at `outputs.weekly_digest_tracker` — one row per **Decided** line onto the
-   *Key Decisions* tab, one row per **Needs a person** and **Blocked** line onto the
-   *Risk Log* tab. Same source, same wording as the digest — the tracker is not a second
-   draft.
+1. `weeklydigest.md` at the repo root — the record of what this run produced. Overwrite
+   it; git history is the archive of prior runs.
+2. The Google Doc at `context-manifest.yaml` → `outputs.weekly_digest_doc`. **Replace the
+   full content — this Doc is the current digest, not an accumulating log.** Google Docs
+   keeps its own version history, so nothing is lost by replacing it; a Doc that grows a
+   new dated section every week is unreadable by week six. **`gws docs +write` only
+   appends plain text — it cannot do this.** The actual mechanism: `documents.get` to
+   find the body's current end index, then `documents.batchUpdate` with a
+   `deleteContentRange` covering the whole body followed by `insertText` (add
+   `updateTextStyle` / `updateParagraphStyle` requests too if the run should keep the
+   original's headers and bold, the way the first version of this doc was formatted).
+   Same document ID every time — never create a new Doc, since the ID is already the one
+   pointed to by the manifest and linked from every notification posted so far.
+3. The tracker at `outputs.weekly_digest_tracker`. **Append, never overwrite.** This one
+   *is* the accumulating log — that's the whole point of a tracker, and starting the
+   write at row 1 destroys every prior week's rows. Use `gws sheets spreadsheets values
+   append` (or the `+append` helper) with `range` set to `"Key Decisions!A1"` or
+   `"Risk Log!A1"` so it finds the existing table and adds after the last row, one row per
+   **Decided** line onto *Key Decisions*, one row per **Needs a person** and **Blocked**
+   line onto *Risk Log*. Same wording as the digest — the tracker is not a second draft.
+   `values.update` at a fixed range is how you silently wipe the history; don't use it
+   here.
 4. **`#webapp`** — a notification that the tracker changed this week, once step 3 has
    actually succeeded, never before. One line per new row in each tab, Slack-formatted
    (bold, bullets, emoji used to mean something, not to decorate), in plain language —
