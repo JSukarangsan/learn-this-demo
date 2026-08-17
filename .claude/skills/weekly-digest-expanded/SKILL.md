@@ -81,13 +81,14 @@ writing a line.
    *Key Decisions* tab, one row per **Needs a person** and **Blocked** line onto the
    *Risk Log* tab. Same source, same wording as the digest — the tracker is not a second
    draft.
-4. **`#webapp`** — a short notification that the tracker changed this week, once step 3
-   has actually succeeded, never before. Say what changed in Key Decisions and Risk Log,
-   in plain language, no filenames and no skill vocabulary — same audience rule as the
-   merge-notify bot in `.github/merge-notify.md`. **Link to the Google Doc, not the
-   Sheet.** The Doc is what people are meant to read; the Sheet is the tracker behind it,
-   and linking straight to a spreadsheet is how you get someone editing a cell instead of
-   reading the update.
+4. **`#webapp`** — a notification that the tracker changed this week, once step 3 has
+   actually succeeded, never before. One line per new row in each tab, Slack-formatted
+   (bold, bullets, emoji used to mean something, not to decorate), in plain language —
+   no filenames, no skill vocabulary, same audience rule as the merge-notify bot in
+   `.github/merge-notify.md`. **Link to the Google Doc, not the Sheet.** The Doc is what
+   people are meant to read; the Sheet is the tracker behind it, and linking straight to
+   a spreadsheet is how you get someone editing a cell instead of reading the update.
+   Format is in `references/digest-format.md`.
 
 Update `outputs.*.last_written` in the manifest after writing. If any of the four writes
 fails, say so in the chat response — a digest that silently only wrote some of the four

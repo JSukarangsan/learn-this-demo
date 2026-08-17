@@ -66,17 +66,33 @@ is wrong — regenerate both from the same run rather than patching either by ha
 
 ## The Slack notification
 
-Two lines, not a repost of the digest. Say what changed in the tracker — how many rows,
-and name the one under *Needs a person* if there is one, since that's the line a person
-actually has to act on. Link to the Doc.
+Not a repost of the digest, and not two lines either — enough that someone can decide
+whether to click through without opening anything. One line per new Key Decisions row,
+one line per new Risk Log row, in Slack markdown (single `*` for bold, `_` for italic,
+`•` for bullets — Slack's syntax, not the digest's).
 
-> :clipboard: This week's tracker: 2 new in Key Decisions, 2 in Risk Log — including one
-> flagged for a person: Jira and the team's chat don't agree on whether editing a
-> schedule after a cohort starts is actually in scope. Full digest → {Doc link}
+```
+:bar_chart: *Weekly tracker update — week of {date}*
 
-Not there: the Sheet link, the ticket keys, "Decided" / "Needs a person" as section
-names. Someone reading this in Slack hasn't opened the tracker yet and shouldn't need the
-skill's vocabulary to know whether to click through.
+*✅ Key Decisions* _(+{n} this run)_
+• {decision}, one line of why
+• _(carried)_ {a row already in the tracker from a prior run, if any are relevant}
+
+*🚧 Risk Log* _(+{n} this run)_
+• 🚩 *Needs a person* — {what Slack/notes said}, {what the tracker and decision log say},
+  and that they disagree. Never the resolution, just the disagreement.
+• ⏳ *Blocked* — {what}, {on whom}, {what changed about it this week}
+
+📄 Full digest, formatted → <{Doc link}|Read it here>
+```
+
+**🚩 marks a *Needs a person* row and nothing else.** It's the one emoji in here that
+means something rather than decorating — if every row got a flag, none of them would.
+⏳ is for Blocked, ✅ and 🚧 are section headers, not judgments on individual rows.
+
+Not there: the Sheet link, ticket keys inline in the summary line, or the digest's own
+section names used as if the reader already knows them ("Decided", "Needs a person" as
+bare words with no context). Someone reading this in Slack hasn't opened the tracker yet.
 
 ## Rules
 
