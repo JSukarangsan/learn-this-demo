@@ -64,6 +64,20 @@ and **Blocked** line goes to *Risk Log* (columns: Date raised, Risk, Evidence, S
 Next step). If a line's wording changes between the digest and the tracker, one of them
 is wrong — regenerate both from the same run rather than patching either by hand.
 
+## The Slack notification
+
+Two lines, not a repost of the digest. Say what changed in the tracker — how many rows,
+and name the one under *Needs a person* if there is one, since that's the line a person
+actually has to act on. Link to the Doc.
+
+> :clipboard: This week's tracker: 2 new in Key Decisions, 2 in Risk Log — including one
+> flagged for a person: Jira and the team's chat don't agree on whether editing a
+> schedule after a cohort starts is actually in scope. Full digest → {Doc link}
+
+Not there: the Sheet link, the ticket keys, "Decided" / "Needs a person" as section
+names. Someone reading this in Slack hasn't opened the tracker yet and shouldn't need the
+skill's vocabulary to know whether to click through.
+
 ## Rules
 
 - **Cite every line.** A ticket key for tracker items, a repo path for repo items,

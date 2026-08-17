@@ -74,6 +74,7 @@ sources:
       see it"
     owner: "Webapp team"
     reachable: true # via the Slack MCP
+    direction: "read and write — the only source that's also a destination"
     last_confirmed: 2026-08-17
     notes: >
       Where a decision gets re-litigated informally before — or instead of — anyone
@@ -81,12 +82,18 @@ sources:
       conversation that treats something as settled when the tracker and the decision
       log don't agree it is. A message here is evidence of what was said, never of what
       was decided. Nothing in this channel can produce a Decided line.
+      It's also where the skill posts its own notification once the Sheet write
+      succeeds — see outputs.weekly_digest_tracker. Read and write happen in the same
+      channel but are not the same permission: reading needs channel history, posting
+      the notification needs chat:write. Losing one doesn't cost you the other.
     reachability_note: >
-      This demo posts under one identity with speaker names inline in the message text,
-      not as distinct Slack users — reading multiple named voices out of a channel does
-      not require the posters to be real, separate accounts. Most teams can reach a
-      channel's history with a normal read scope; posting as visibly distinct people
-      needs chat:write.customize and is a heavier ask than this kit assumes by default.
+      This demo posts the mock conversation under one identity with speaker names inline
+      in the message text, not as distinct Slack users — reading multiple named voices
+      out of a channel does not require the posters to be real, separate accounts. Most
+      teams can reach a channel's history with a normal read scope; posting as visibly
+      distinct people needs chat:write.customize and is a heavier ask than this kit
+      assumes by default. The notification the skill itself posts is a normal chat:write
+      message and doesn't need that scope.
 
   product_ui:
     canonical: "https://www.figma.com/design/YA4IogBXflpPsX5HEAm78o"

@@ -72,7 +72,7 @@ a side is the one mistake this skill exists to avoid making silently.
 Format, section order, and voice are in **`references/digest-format.md`**. Read it before
 writing a line.
 
-**Write to three places, from the same run:**
+**Write to four places, from the same run, in this order:**
 
 1. `weeklydigest.md` at the repo root — the record of what this run produced.
 2. The Google Doc at `context-manifest.yaml` → `outputs.weekly_digest_doc`, as the
@@ -81,10 +81,19 @@ writing a line.
    *Key Decisions* tab, one row per **Needs a person** and **Blocked** line onto the
    *Risk Log* tab. Same source, same wording as the digest — the tracker is not a second
    draft.
+4. **`#webapp`** — a short notification that the tracker changed this week, once step 3
+   has actually succeeded, never before. Say what changed in Key Decisions and Risk Log,
+   in plain language, no filenames and no skill vocabulary — same audience rule as the
+   merge-notify bot in `.github/merge-notify.md`. **Link to the Google Doc, not the
+   Sheet.** The Doc is what people are meant to read; the Sheet is the tracker behind it,
+   and linking straight to a spreadsheet is how you get someone editing a cell instead of
+   reading the update.
 
-Update `outputs.*.last_written` in the manifest after writing. If any of the three writes
-fails, say so in the chat response — a digest that silently only wrote one of three places
-is worse than one that admits it's partial.
+Update `outputs.*.last_written` in the manifest after writing. If any of the four writes
+fails, say so in the chat response — a digest that silently only wrote some of the four
+places is worse than one that admits it's partial. In particular: **never send the Slack
+notification if the tracker write failed.** A notification announcing an update that
+didn't happen is worse than no notification.
 
 ## Stop and ask a human when
 
