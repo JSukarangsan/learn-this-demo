@@ -42,18 +42,29 @@ it can't be.
 
 ## Phrasing *Needs a person*
 
-Name what each source actually said, not a summary that already picked a side.
+**Name the person, not the system.** "Jira says" and "Slack says" are never the subject
+of the sentence — Wren said something, Marguerite said something, an instructor said
+something in an interview eighteen months ago. Systems don't disagree; people do, at
+different times, sometimes without knowing about each other. That's the actual finding,
+and it disappears the moment you write "the tracker and the channel are out of sync."
 
-> - Jira and #webapp disagree about whether "edit a schedule after a cohort starts" is
->   in scope. `team/roadmap-and-bets.md` lists it under "what we said no to" — one
->   instructor interview said they wouldn't even use it. In Slack on Aug 17, the team
->   talked about it like it's already agreed and starting this sprint, and said they'd
->   open a ticket; none exists yet. Report this as Moving, or hold it at Open until Jira
->   or the decision log catches up?
+**Lead with the disagreement itself, not where you found it.** Where each side of it
+lives — which file, which channel, which date — is citation, and citation goes in
+parentheses at the end or in the Evidence column of the tracker. It's real and it has to
+be checkable, but it's not the sentence's subject.
 
-Note what that line does *not* do: it doesn't say which answer is right, and it doesn't
-soften "we said no" into "we discussed." Both sources get quoted at the strength they
-actually said it.
+> - The team already sounds like it's agreed to build something instructors said, in
+>   research, they wouldn't even use. In #webapp on Aug 17, Wren said "I think we just
+>   build it," Tobias agreed to scope it this sprint, and Marguerite said she'd tell
+>   instructors it's coming — Wren said they'd open the ticket, but nothing exists in
+>   SCRUM yet. This was cut for exactly that reason, cited in `roadmap-and-bets.md`.
+>   Hold to the roadmap call, or is this a real reversal that needs writing up?
+>   (team/roadmap-and-bets.md; Slack #webapp, Aug 17)
+
+Note what that version does that "Jira and Slack disagree" doesn't: a reader who's never
+opened the repo still knows exactly what happened and who said it. And note what it still
+doesn't do — it doesn't say which answer is right, and it doesn't soften "wouldn't even
+use it" into "some hesitation." Quote people at the strength they actually said it.
 
 ## Writing to the tracker
 
@@ -114,13 +125,13 @@ Real output, week of Aug 17.
 **Week of Aug 17** (covering Aug 11–17)
 
 **Needs a person**
-- Jira and #webapp disagree about whether "edit a schedule after a cohort starts" is in
-  scope. team/roadmap-and-bets.md lists it under "what we said no to" — one instructor
-  interview said they wouldn't even use it. In Slack on Aug 17, Wren, Marguerite,
-  Tobias, and Priyanka talked about it like it's already agreed and starting this
-  sprint; Wren said "I'll open the ticket," but no SCRUM ticket exists yet. Report this
-  as Moving — treat Slack as the real signal — or hold it at Open, not decided, until
-  Jira or the decision log catches up? (team/roadmap-and-bets.md; Slack #webapp, Aug 17)
+- The team already sounds like it's agreed to build something instructors said, in
+  research, they wouldn't even use. In Slack on Aug 17, Wren said "I think we just
+  build it," Tobias agreed to scope it this sprint, Marguerite said she'd tell
+  instructors it's coming, and Wren said they'd open the ticket — no SCRUM ticket
+  exists yet. This was cut for exactly that reason, cited in roadmap-and-bets.md. Hold
+  to the roadmap call, or is this a real reversal that needs writing up?
+  (team/roadmap-and-bets.md; Slack #webapp, Aug 17)
 
 **Blocked**
 - Vendor SDK upgrade, on a session-recording regression pass owned by Instructor Tools.

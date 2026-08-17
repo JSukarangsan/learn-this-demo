@@ -67,6 +67,11 @@ being silent is just an update, not a conflict.
 call — you weren't in the room, the tracker doesn't know it's being ignored, and picking
 a side is the one mistake this skill exists to avoid making silently.
 
+**And report it as people, not systems.** "Jira and Slack disagree" is a sentence about
+software. Wren said something, an instructor said something in an interview — that's the
+actual finding, and where each of them said it is citation, not the subject. See
+*Phrasing Needs a person* in `references/digest-format.md`.
+
 ## Then write it
 
 Format, section order, and voice are in **`references/digest-format.md`**. Read it before
