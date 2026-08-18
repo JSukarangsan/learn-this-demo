@@ -19,6 +19,35 @@ If a run of this skill returns a clean digest with nothing under *Needs a person
 a fine week — say so and stop. Padding that section to look thorough is worse than an
 honest four lines.
 
+## Keep it fast
+
+This is team-wide by design — six sources, three services — and that's inherent, not the
+part to cut. What makes a run slow is the detours in between. Don't take these:
+
+- **Fetch the tracker in one query, not one ticket at a time.** A single JQL call across
+  the whole project, with the fields named in step 3 (`status`, `summary`, `updated`,
+  `issuelinks`), covers the whole board. Only pull a single issue's full
+  `description`/`comment` for a ticket that's actually a candidate for **Moving**,
+  **Blocked**, or **Needs a person** — not for every ticket the query returns.
+- **Compute the window's timestamps once, then read the channel directly.**
+  `slack_read_channel` with `oldest`/`latest` set to the window's bounds beats guessing
+  keywords into `slack_search_*` — a keyword search misses anything that doesn't happen
+  to contain the word, and a miss just sends you back to try another one.
+- **Check a file's date before opening it.** `comms/` filenames are dated
+  (`YYYY-MM-DD-*.md`) — filter by filename first, and open only the ones inside the
+  window, plus the single most recent one per project for the previous-digest check in
+  step 7. Opening every status file in every project "to be safe" is the biggest single
+  source of wasted reads.
+- **Take each source at its word for its own step.** Step 3 reads what the tracker says;
+  step 4 reads what Slack says. Neither step is an invitation to go verify the other
+  against something outside the read list — git history, a PR's actual merge status,
+  whatever else it makes you curious about. *The join that matters here* below is a
+  **specific** three-way check — Slack vs. tracker vs. decision log — not a general audit
+  of whether everything anyone claimed is true.
+- **Don't re-derive what a cited file already says.** If `roadmap-and-bets.md` already
+  lists something under "what we said no to," that citation is the finding. Tracing how
+  it got there is a different task nobody asked for.
+
 ## Read, in this order
 
 1. **`team/how-we-work.md`** — the reporting window. Monday to Sunday, not the sprint.
@@ -47,8 +76,8 @@ honest four lines.
 
 6. **`team/goals-and-okrs.md`** and **`team/roadmap-and-bets.md`** — what the team is
    trying to move, and what it already said no to and why. A Slack thread that reopens a
-   roadmap "no" is the sharpest thing this skill can find, and it only knows to look
-   because this file exists.
+   roadmap "no" is the sharpest kind of finding here, and this file is the only way to
+   catch it.
 
 7. **The previous digest** — `weeklydigest.md`'s prior version, or the last dated status
    in a project's `comms/`, for one purpose only: what you said was moving that hasn't
@@ -64,8 +93,8 @@ no. All three, or it doesn't go under *Needs a person* — two sources agreeing 
 being silent is just an update, not a conflict.
 
 **Report the disagreement. Do not resolve it.** Naming which side is right is a person's
-call — you weren't in the room, the tracker doesn't know it's being ignored, and picking
-a side is the one mistake this skill exists to avoid making silently.
+call — you weren't in the room, and the tracker doesn't know it's being ignored. Picking
+a side silently is the one mistake to avoid here.
 
 **And report it as people, not systems.** "Jira and Slack disagree" is a sentence about
 software. Wren said something, an instructor said something in an interview — that's the
@@ -87,10 +116,21 @@ gets invoked twice, so check regardless of whether the window logic looks right.
 **On the window, if this run doesn't fall on the Monday `how-we-work.md` assumes:** say
 what window you're using before you read anything, rather than silently guess which
 Monday–Sunday span applies. "Running this for the week of {date}, covering {range}" as
-the first line back is enough. A silently wrong window is the single most common way a
-run of this skill's predecessors has looked broken when it wasn't — every mock content
-file in this kit is dated to a specific week on purpose, and the run only finds it if the
-window actually covers those dates.
+the first line back is enough. A silently wrong window is the most common way a run looks
+broken when it isn't — every mock content file in this kit is dated to a specific week on
+purpose, and the run only finds it if the window actually covers those dates.
+
+## Before you write anything
+
+Show the draft — at minimum every **Needs a person** line — and get it confirmed before
+touching any of the four destinations. This isn't optional when there's a disagreement to
+report: the job is to surface it, not resolve it, and confirming with a person is how
+that actually happens rather than just being a rule on a page. Ask which way to write the
+disagreement up, and whether the rest of the draft is right to publish. Proceed to the
+writes below only after that comes back.
+
+When reporting results back, keep it to the findings — a status report, not a narration
+of how you found them.
 
 ## Then write it
 

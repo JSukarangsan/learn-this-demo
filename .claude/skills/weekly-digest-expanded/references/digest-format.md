@@ -108,8 +108,8 @@ bare words with no context). Someone reading this in Slack hasn't opened the tra
 ## Rules
 
 - **Cite every line.** A ticket key for tracker items, a repo path for repo items,
-  "Slack #webapp, {date}" for a conversation. The whole argument for this skill is that
-  it read sources against each other and you can go check that it did.
+  "Slack #webapp, {date}" for a conversation — so any line here can be traced back to the
+  two sources that were actually read against each other.
 - **A Slack message or a transcript can never produce a Decided line**, no matter how
   settled the conversation sounded. Only `product/decisions/` can.
 - **Never infer a blocker.** If nothing states a block, Blocked stays empty.
@@ -149,8 +149,7 @@ Real output, week of Aug 17.
   (product/decisions/2026-08-12-schedule-edit-review-bar.md)
 ```
 
-**The first line is the one that justifies the skill.** It doesn't exist in the tracker,
-which shows no ticket. It doesn't exist in the decision log, which has nothing this week.
-It only exists by reading a Slack conversation against a roadmap file from a different
-folder — which is exactly what nobody does on a Friday, and the reason the tracker and
-the room can disagree for weeks without anyone noticing.
+**That first line only exists by reading a Slack conversation against a roadmap file from
+a different folder.** It's not in the tracker, which shows no ticket. It's not in the
+decision log, which has nothing this week. That cross-read is the point — it's the check
+nobody has time to run by hand.
