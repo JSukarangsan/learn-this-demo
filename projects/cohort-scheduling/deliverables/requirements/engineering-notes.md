@@ -19,7 +19,7 @@ no path that revokes it.
 So a schedule change after start isn't a write to the schedule table. It's a write that
 has to fan out to the enrollment service, re-issue invites, and give every affected
 learner a decision to make. That's the instructor-confirmation path in
-`../../engineering/constraints.md`, and **it does not exist yet.** Nobody is building it
+`../../../../engineering/constraints.md`, and **it does not exist yet.** Nobody is building it
 this quarter.
 
 ## What this means for anything learner-facing
@@ -35,7 +35,7 @@ Tobias asked whether we could let them change it later. I said no in the room wi
 explaining why, which is exactly how a question comes back. So: the same argument applies,
 and it's worse. The timezone is baked into every invite we've already sent. Changing it after
 start means every learner's calendar is wrong and we can't fix it from our side.
-`product/decisions/2026-08-04-timezone-locked-at-creation.md` has the product reason;
+`../../../../product/decisions/2026-08-04-timezone-locked-at-creation.md` has the product reason;
 this is the technical one, and they agree.
 
 ## Still blocked
