@@ -2,8 +2,8 @@
 
 **Nothing in this folder is hand-written, and nothing in it is canonical.**
 
-Every file here is a summary of a document owned somewhere else — the H2 planning doc, the
-ops cohort calendar, the instructor NPS page. `.github/workflows/refresh-context.yml` reads
+Every file here is a summary of a document owned somewhere else — the H2 planning doc and
+the ops cohort calendar. `.github/workflows/refresh-context.yml` reads
 `../../context-manifest.yaml`, fetches each source that declares a `summarize_to`, summarizes
 it, and writes the result here. Then it opens a PR.
 
@@ -65,9 +65,9 @@ PR carries the entry whether or not a summary moved.
 - **A PR, not a commit.** The pipeline proposes and a person confirms. Same rule
   `/refresh-index` follows. A bad summary that lands silently becomes the team's context.
 - **Not everything upstream belongs here.** `product_ui` is pulled live because visual state
-  doesn't survive being described in prose. `contract_terms` is deliberately unreachable.
-  `vendor_video_sla` has no API, so a person exports it into `insights/` by hand and that
-  export is authoritative. The manifest marks all three, and the pipeline skips them.
+  doesn't survive being described in prose. `vendor_video_sla` has no API, so a person
+  exports it into `insights/` by hand and that export is authoritative. The manifest marks
+  both, and the pipeline skips them.
 
 ## The honest limit
 

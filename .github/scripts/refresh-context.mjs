@@ -91,19 +91,7 @@ export async function fetchSource(name, src) {
     }
     return body
   }
-  if (src.type === 'notion_page' || src.type === 'notion_database') {
-    const token = process.env.NOTION_TOKEN
-    if (!token) throw new Error('NOTION_TOKEN is not set')
-    const id = (src.canonical.match(/([0-9a-f]{32})/) || [])[1]
-    if (!id) throw new Error(`no page id in ${src.canonical}`)
-    const res = await fetch(`https://api.notion.com/v1/blocks/${id}/children?page_size=100`, {
-      headers: { Authorization: `Bearer ${token}`, 'Notion-Version': '2022-06-28' },
-    })
-    if (!res.ok) throw new Error(`notion ${res.status}`)
-    const json = await res.json()
-    return JSON.stringify(json.results, null, 1)
-  }
-  throw new Error(`no way to fetch a ${src.type}`)
+  throw new Error(`no way to fetch a ${src.type} — it declares no \`fetch:\` URL`)
 }
 
 // ---------------------------------------------------------------------------

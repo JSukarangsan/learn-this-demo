@@ -59,12 +59,12 @@ sources:
       Blocked comes from the issue link and nothing else. A summary that reads like a
       blocker is not one.
     supersedes: >
-      A Notion database held this until 2026-08-15
-      (app.notion.com/p/3b3a901bd57d8146a6b6d48f1abdb851). It moved because the tracked
-      work belongs in the tracker the team already uses, and a demo that reaches past it
-      argues against itself. /weekly-digest was repointed here on 2026-08-19; both skills
-      now read this one board. The Notion page is left unlinked rather than deleted so the
-      move stays legible.
+      A Notion database held this until 2026-08-15. It moved because the tracked work
+      belongs in the tracker the team already uses, and a demo that reaches past it argues
+      against itself. /weekly-digest was repointed here on 2026-08-19; both skills now read
+      this one board. Notion was retired from the kit entirely the same day — no source
+      points at it and the pipeline no longer knows how to fetch one. Recorded here because
+      the move explains why scope lives in Jira, not because anything still reads it.
 
   team_chat:
     canonical: "#webapp, in the team's Slack workspace"
@@ -157,18 +157,6 @@ sources:
       Same caveat as h2_planning — direct fetch works here because it is link-shared
       fiction. Glean is the route that works inside the company.
 
-  instructor_nps:
-    canonical: "https://app.notion.com/p/3b3a901bd57d819b91ddf531a047463f"
-    type: notion_page
-    owner: "Insights"
-    reachable: true # via Notion MCP
-    refresh: quarterly
-    summarize_to: team/_generated/instructor-nps.md
-    last_confirmed: 2026-08-05
-    notes: >
-      Raw read only. What any of it means is arbitrated in insights/definitions.md, which
-      lives in this repo — the survey does not get to define the metric.
-
   vendor_video_sla:
     canonical: "vendor portal, SSO only — no API"
     type: vendor_portal
@@ -182,19 +170,6 @@ sources:
       Unreachable, but not unimportant — so a person exports it by hand and the export is
       authoritative. Never summarize this one from upstream; there is no upstream to
       reach. /refresh-index should check the export's date, not the portal.
-
-  contract_terms:
-    canonical: "Legal, counsel only"
-    type: restricted
-    owner: "Legal"
-    reachable: false
-    deliberate: true
-    notes: >
-      Canonical, unreachable, and correctly so. Some material should stay where it is.
-      Writing down that it exists, that it's authoritative, and that we are deliberately
-      not making it reachable is a finished answer, not a to-do — and an agent that
-      knows this is better than one that goes looking. /refresh-index must never report
-      this as drift.
 
 # Where /weekly-digest-expanded writes, not reads from. Same addressing-layer rule
 # applies: an ID here, never a copy of what the doc currently says.
@@ -236,7 +211,6 @@ local:
 # What a tool can actually reach from here today.
 available_connections:
   - jira # the tracked work
-  - notion # the NPS page
   - figma # the UI
   - google_drive # planning doc and ops calendar, fetched over link-shared export URLs
   - slack # #demo-learn-this, read-only — /weekly-digest-expanded

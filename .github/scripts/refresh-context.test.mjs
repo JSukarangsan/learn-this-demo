@@ -58,7 +58,7 @@ sources:
     copy_of_record: insights/vendor-video-sla-2026-q3.md
     refresh: quarterly
 
-  contract_terms:
+  restricted_source:
     canonical: "Legal, counsel only"
     type: restricted
     reachable: false
@@ -77,7 +77,7 @@ describe('parseSources — the manifest reader', () => {
       'cohort_scheduling_flow',
       'product_backlog',
       'vendor_video_sla',
-      'contract_terms',
+      'restricted_source',
     ])
   })
 
@@ -85,8 +85,8 @@ describe('parseSources — the manifest reader', () => {
     // `reachable: true # via Figma MCP` has to come back as the boolean true, not the
     // string "true # via Figma MCP", which is truthy and would silently pass every check.
     assert.equal(sources.cohort_scheduling_flow.reachable, true)
-    assert.equal(sources.contract_terms.reachable, false)
-    assert.equal(sources.contract_terms.deliberate, true)
+    assert.equal(sources.restricted_source.reachable, false)
+    assert.equal(sources.restricted_source.deliberate, true)
   })
 
   test('a folded block comes back as one line', () => {
@@ -134,7 +134,7 @@ describe('the cached-or-pointed-at rule', () => {
     const why = Object.fromEntries(skipped.map((s) => [s.name, s.why]))
     assert.match(why.product_backlog, /read the source/)
     assert.match(why.vendor_video_sla, /a person maintains/)
-    assert.match(why.contract_terms, /deliberately out of reach/)
+    assert.match(why.restricted_source, /deliberately out of reach/)
     assert.equal(why.cohort_scheduling_flow, 'no copy in this repo, read the source')
   })
 })
@@ -152,14 +152,14 @@ describe('the run log', () => {
     const entry = renderLogEntry({
       today: '2026-08-19',
       done: [{ name: 'h2_planning', file: 'team/_generated/h2-planning.md', in: 4324, out: 1866 }],
-      failed: [{ name: 'instructor_nps', why: 'NOTION_TOKEN is not set' }],
-      skipped: [{ name: 'contract_terms', why: 'deliberately out of reach' }],
+      failed: [{ name: 'cohort_calendar', why: 'got a Google sign-in page — the file is not link-shared' }],
+      skipped: [{ name: 'restricted_source', why: 'deliberately out of reach' }],
       runUrl: 'https://github.com/o/r/actions/runs/1',
     })
     assert.match(entry, /^## 2026-08-19 — pipeline$/m)
     assert.match(entry, /1 refreshed, 1 failed, 1 skipped by design/)
     assert.match(entry, /REFRESHED\s+h2_planning\s+→ team\/_generated\/h2-planning\.md \(4324 chars in, 1866 out\)/)
-    assert.match(entry, /FAILED\s+instructor_nps\s+NOTION_TOKEN is not set/)
+    assert.match(entry, /FAILED\s+cohort_calendar\s+got a Google sign-in page/)
     assert.match(entry, /actions\/runs\/1/)
   })
 

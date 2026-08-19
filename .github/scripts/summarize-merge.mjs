@@ -94,7 +94,6 @@ const readableKey = (k) => k.replace(/_/g, ' ')
 /** How each manifest `type:` reads in a sentence. */
 const TYPE_NOUN = {
   figma: 'a Figma file',
-  notion_database: 'a Notion database',
   google_doc: 'a Google Doc',
   google_sheet: 'a Google Sheet',
   github_repo: 'a GitHub repo',

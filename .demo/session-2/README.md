@@ -161,8 +161,8 @@ connector is the same, the data is invented, and the joins are what matter.
 - [ ] Four sample issues (`SCRUM-1` to `SCRUM-4`) still on the board.
 - [ ] Board columns still have Jira's default names, so two issues sit in *To Do* when they
       mean *Blocked*.
-- [ ] `/weekly-digest` still reads the Notion backlog. Now that `product_backlog` points at Jira,
-      two skills in one repo read two different backlogs, which is exactly the incoherence a
-      participant would catch. Either repoint it or retire it before Session 3.
+- [x] `/weekly-digest` repointed at Jira on 2026-08-19, so both skills read one board.
+      Notion is out of the kit entirely — the `instructor_nps` source and the Notion fetch
+      path in `refresh-context.mjs` were removed the same day.
 - [ ] The worked example in `references/update-format.md` is written from the seed data but
       has not been run against a live Jira. Verify it before relying on it as the recovery.
