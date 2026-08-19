@@ -100,11 +100,14 @@ sources:
     type: figma
     owner: "Ines Okafor (Design)"
     reachable: true # via Figma MCP
-    last_confirmed: 2026-08-05
+    last_confirmed: 2026-08-16
     notes: >
-      Design system and product UI. Frames are named `Screen / viewport / state`.
+      Design system and product UI. Frames are named `Screen / viewport / state`,
+      and some add a fourth `condition` segment. Both parse.
       Pulled live rather than summarized — visual state doesn't survive being
       described in prose.
+      Cannot be date-checked: the Figma tooling returns structure, not a modified
+      timestamp, so `refresh: live` here means *always fetched*, never *known current*.
 
   cohort_scheduling_flow:
     canonical: "https://www.figma.com/design/YA4IogBXflpPsX5HEAm78o"
