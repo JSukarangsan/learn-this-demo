@@ -17,6 +17,19 @@ don't own, and losing that race the first time the VP edits it.
 A summary regenerated from the source is disposable. If it's wrong, you don't fix it — you
 fix the prompt or the pointer and run it again.
 
+## The log
+
+`refresh-log.md` is the exception to everything below: it is appended to, never overwritten,
+and it is the only file here that survives a run producing nothing. Both halves of the
+addressing layer write to it — the pipeline every time it runs, `/refresh-index` every time
+a person checks the pointers — and each entry says which.
+
+It is there because the pipeline's failure mode is silence. It was scheduled for Mondays and
+produced nothing for months; every pointer resolved, every source was real, and the missing
+`ANTHROPIC_API_KEY` meant the summarize step never executed. Nothing surfaced that, because
+a workflow that writes no files opens no PR. So the run now writes itself down first and the
+PR carries the entry whether or not a summary moved.
+
 ## Rules
 
 - **Don't edit these files.** The next run overwrites you. Edit the source, or edit the

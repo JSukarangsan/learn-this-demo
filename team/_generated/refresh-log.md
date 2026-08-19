@@ -1,15 +1,21 @@
 # Refresh log
 
-**Derived, not authored.** Every entry is a run of `/refresh-index`. Newest first. Nothing
-here is canonical and deleting it costs nothing except the answer to *when did anyone last
-check this*, which is the only question it exists to answer.
+**Derived, not authored.** Newest first. Nothing here is canonical and deleting it costs
+nothing except the answer to *when did anyone last check this*, which is the only question
+it exists to answer.
+
+Two kinds of entry, both marked in their heading. **pipeline** is
+`.github/workflows/refresh-context.yml` writing down what it fetched. **/refresh-index**
+is a person checking the pointers themselves. They answer the same question from opposite
+ends — one proves the fetching still works, the other proves the addresses are still right
+— and a run of either without the other leaves half the layer unchecked.
 
 Entries are never edited after the fact. If a later run disagrees with an earlier one, that
 disagreement is the useful part.
 
 ---
 
-## 2026-08-16
+## 2026-08-16 — /refresh-index
 
 Seven sources. Every address resolved.
 

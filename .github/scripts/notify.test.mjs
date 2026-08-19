@@ -1,5 +1,5 @@
 /**
- * Run: node --test .github/scripts/
+ * Run: node --test .github/scripts/*.test.mjs
  *
  * Covers the two things that can embarrass you live: the message saying the wrong
  * thing, and the POST silently failing. The last test stands up a real HTTP server

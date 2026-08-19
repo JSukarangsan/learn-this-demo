@@ -6,6 +6,9 @@ name: Refresh context
 # A PR rather than a direct commit, on purpose. The pipeline proposes; a person
 # confirms. That is the same rule /refresh-index follows, and it is what keeps a
 # bad summary from quietly becoming the team's context.
+#
+# Every run also appends an entry to team/_generated/refresh-log.md, so the PR
+# carries the record of the run even when no summary moved.
 
 on:
   schedule:
@@ -13,7 +16,7 @@ on:
   workflow_dispatch:
     inputs:
       dry_run:
-        description: 'Fetch and report, but do not summarize or write'
+        description: 'Fetch and report, but do not summarize, write or log'
         type: boolean
         default: false
 
@@ -29,7 +32,12 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
+
+      # The script is the thing that decides what gets written into the repo, so it
+      # runs against its own tests before it runs against the manifest.
+      - name: Test
+        run: node --test .github/scripts/*.test.mjs
 
       - name: Resolve pointers and summarize
         id: refresh
@@ -40,8 +48,13 @@ jobs:
           node .github/scripts/refresh-context.mjs \
             ${{ inputs.dry_run && '--dry-run' || '' }} | tee refresh-report.txt
 
-      - name: Open a PR if anything changed
-        if: steps.refresh.outputs.changed == 'true' && !inputs.dry_run
+      # `!cancelled()` and not `success()`, deliberately. The step above exits non-zero
+      # when any source failed, and a job that goes red is the right signal — but one
+      # unreachable source must not suppress the summaries that did refresh, or the log
+      # entry recording that the run happened. A run nobody hears about is the failure
+      # this whole pipeline exists to prevent.
+      - name: Open a PR with what changed and the run log
+        if: ${{ !cancelled() && steps.refresh.outputs.changed == 'true' && !inputs.dry_run }}
         uses: peter-evans/create-pull-request@v6
         with:
           branch: context/refresh

@@ -69,11 +69,19 @@ It exists for one reason. The manifest's failure mode is that nobody notices, an
 anyone last check this"* is unanswerable if the check only ever printed to somebody's
 terminal. The log turns that into a date you can read.
 
-Each entry is the date, one line per source, and the proposed edits as a diff. Keep it terse;
-this is a record that the check ran and what it saw, not a document anyone reads for pleasure.
+Head the entry `## {date} — /refresh-index`. The refresh pipeline writes into the same file
+and marks its entries `— pipeline`, so an unlabelled entry is ambiguous about which half of
+the layer got checked. Then the date, one line per source, and the proposed edits as a diff.
+Keep it terse; this is a record that the check ran and what it saw, not a document anyone
+reads for pleasure.
 
 **Never edit an old entry.** If a later run disagrees with an earlier one, that disagreement
 is the useful part.
+
+**Read the pipeline entries above yours before you write.** They are the fetching half of
+the same layer and they carry findings this check cannot produce on its own — a source that
+resolves fine from your terminal and 403s from the runner is still a broken pointer, and the
+pipeline is the only thing that sees it.
 
 ## The entries that are supposed to say no
 
@@ -97,3 +105,9 @@ This is a check you run. It is not the auto-refreshing manifest — that watches
 flags drift without being asked, and **it does not exist yet.** The comment at the top of
 `context-manifest.yaml` says so, and it stays true until it isn't. Don't describe this as
 though it does.
+
+`.github/workflows/refresh-context.yml` is not that either, and the difference is worth
+holding onto. It rebuilds the summaries under `team/_generated/` on a schedule and writes
+its own line in the log. It never touches `last_confirmed`, never checks whether a pointer
+still aims at the right thing, and cannot tell you that a source moved — it only knows
+whether the address it was handed answered. That is the gap this skill fills.
