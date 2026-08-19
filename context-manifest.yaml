@@ -62,9 +62,9 @@ sources:
       A Notion database held this until 2026-08-15
       (app.notion.com/p/3b3a901bd57d8146a6b6d48f1abdb851). It moved because the tracked
       work belongs in the tracker the team already uses, and a demo that reaches past it
-      argues against itself. /weekly-digest still reads the Notion copy and has not been
-      repointed — two skills reading two different backlogs is a real inconsistency, not
-      a transitional state to leave alone.
+      argues against itself. /weekly-digest was repointed here on 2026-08-19; both skills
+      now read this one board. The Notion page is left unlinked rather than deleted so the
+      move stays legible.
 
   team_chat:
     canonical: "#webapp, in the team's Slack workspace"

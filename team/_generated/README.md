@@ -7,6 +7,32 @@ ops cohort calendar, the instructor NPS page. `.github/workflows/refresh-context
 `../../context-manifest.yaml`, fetches each source that declares a `summarize_to`, summarizes
 it, and writes the result here. Then it opens a PR.
 
+## Running it
+
+**The refresh runs locally, not on a schedule.** This repository is public, and a GitHub
+Actions secret is readable by anyone who can push a workflow to it — so `ANTHROPIC_API_KEY`
+is deliberately not stored here and the Monday cron in
+`.github/workflows/refresh-context.yml` is commented out. The key lives in the operator's
+own environment instead:
+
+```sh
+export ANTHROPIC_API_KEY=...          # your shell only — never committed, never a repo secret
+node .github/scripts/refresh-context.mjs --dry-run   # fetch and report, write nothing
+node .github/scripts/refresh-context.mjs             # write the summaries and the log entry
+```
+
+The dry run is worth doing first: it resolves every pointer and fetches every source
+without spending a token, so a broken pointer surfaces before any summarizing happens. The
+real run rewrites the files in this folder and appends to `refresh-log.md`; commit the
+result as a PR the same way the workflow would have.
+
+The workflow itself still exists and can be triggered by hand
+(`gh workflow run refresh-context.yml`), but with no key in the repo it will report
+`0 refreshed, 1 failed` and open a PR carrying only the log entry — which is the honest
+outcome, not a bug. Re-enabling the cron means first putting a credential here that is safe
+to store in a public repo: a scoped key with its own spend limit, or OIDC federation with
+no stored secret at all.
+
 ## Why summaries and not copies
 
 Because the alternative is worse in both directions. Pasting the whole planning doc in here

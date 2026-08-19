@@ -11,8 +11,15 @@ name: Refresh context
 # carries the record of the run even when no summary moved.
 
 on:
-  schedule:
-    - cron: '0 6 * * 1' # Mondays, 06:00 UTC — before the weekly update goes out
+  # The Monday cron is off on purpose. ANTHROPIC_API_KEY is deliberately NOT in this
+  # repo's secrets — it is public, and any collaborator who can push a workflow can read
+  # a secret out of one. So the summarize step runs locally, where the key stays in the
+  # operator's own environment, and this workflow is dispatch-only. See
+  # team/_generated/README.md → Running it. Re-enable the cron only alongside a
+  # credential that is safe to store here (a scoped key, or OIDC federation).
+  #
+  # schedule:
+  #   - cron: '0 6 * * 1' # Mondays, 06:00 UTC — before the weekly update goes out
   workflow_dispatch:
     inputs:
       dry_run:
