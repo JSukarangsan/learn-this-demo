@@ -45,12 +45,30 @@ trains people to ignore the report.
 
 ## What to report
 
+Open with a one-line count so the result is scannable before anyone reads a word of
+detail: `{n} sources checked — {c} confirmed, {d} drifted, {u} unreachable, {k} unknown`.
+
+Then one block per entry, in manifest order. Don't hand-align columns — it looks tidy
+for one run and turns into whitespace archaeology on the next edit, and it buys nothing
+a bold label doesn't already give you:
+
 ```
-CONFIRMED    {key} — resolves, reachable{, and the copy still matches}
-DRIFTED      {key} — cached. source modified {date}, last confirmed {last_confirmed}
-UNREACHABLE  {key} — reachable: true, but isn't. {what happened}
-UNKNOWN      {key} — cached, and can't be dated. {which connector, and what it withholds}
+**CONFIRMED** — `{key}`
+Resolves, reachable{, and the copy still matches}.
+
+**DRIFTED** — `{key}`
+Cached. Source modified {date}, last confirmed {last_confirmed}.
+
+**UNREACHABLE** — `{key}`
+`reachable: true` claimed, but isn't. {what happened}.
+
+**UNKNOWN** — `{key}`
+Cached, and can't be dated. {which connector, and what it withholds}.
 ```
+
+The detail line can run long and wrap normally — that's the point of dropping the
+table. A short reason stays one line; a real finding (like a page that's gone missing)
+gets the room it needs without breaking alignment for every entry after it.
 
 Say which pile each entry was in when it isn't obvious. "Resolves, reachable, no copy to
 check" is a complete and good result for a pointed-at source, and it should read like one
@@ -59,6 +77,34 @@ rather than like something was skipped.
 Then propose the edit — updated `last_confirmed` on confirmed entries, a corrected
 `reachable`, and a flag on drifted ones. **Propose it. Don't apply it.** A human confirms
 what's canonical.
+
+## Regenerate what's missing or stale
+
+Reporting DRIFTED or UNKNOWN with a summary file that's missing or behind is half the job.
+If a cached entry needs a rebuild, rebuild it — don't just describe the gap.
+
+`.github/scripts/refresh-context.mjs` needs `ANTHROPIC_API_KEY` because it's a standalone
+script with no model of its own to call — that's for when it runs unattended (the
+scheduled workflow) or when a person runs it by hand from their own shell. Neither applies
+here: **you are the model it would have called.** Don't shell out to the script, and don't
+check for a key — just do the regeneration directly, in the same turn:
+
+Fetch the source the same way the script does, and summarize it against the exact rules
+in the script's `PROMPT` constant (under 5,000 characters; keep every number, date, name,
+target, and constraint; keep anything phrased as a rule or a guardrail, especially what
+NOT to do; keep the caveats; add no analysis the source doesn't contain; say so if the
+source contradicts itself; markdown, starting with a heading, no preamble). Write the file
+to `summarize_to` in the same generated-file shape the script produces, but name
+`/refresh-index` as the actual author in the banner — never claim the automated pipeline
+ran when it didn't, that's exactly the kind of silent gap this file exists to catch.
+
+One summarization prompt still governs both paths, so if the rules ever need to change,
+change them in the script's `PROMPT` and here together — the two must not drift apart just
+because one has a key and the other doesn't.
+
+Log the regeneration the same way the pipeline would — which source, which file, how many
+characters in and out — under `— /refresh-index`, since a person's session produced it,
+not the scheduled job.
 
 ## Then write the run down
 
@@ -106,8 +152,11 @@ flags drift without being asked, and **it does not exist yet.** The comment at t
 `context-manifest.yaml` says so, and it stays true until it isn't. Don't describe this as
 though it does.
 
-`.github/workflows/refresh-context.yml` is not that either, and the difference is worth
-holding onto. It rebuilds the summaries under `team/_generated/` on a schedule and writes
-its own line in the log. It never touches `last_confirmed`, never checks whether a pointer
-still aims at the right thing, and cannot tell you that a source moved — it only knows
-whether the address it was handed answered. That is the gap this skill fills.
+`.github/workflows/refresh-context.yml` is not the same thing either, but the difference is
+narrower than it looks. Both it and this skill can now write a summary into
+`team/_generated/` — the workflow does it on a schedule, unattended; this skill does it when
+a person asks and finds one missing or stale, reusing the same summarization rules. What the
+workflow still does that this skill doesn't: it never touches `last_confirmed`, never checks
+whether a pointer still aims at the right thing, and cannot tell you that a source moved — it
+only knows whether the address it was handed answered. That's still the gap this skill fills,
+regeneration or not.
