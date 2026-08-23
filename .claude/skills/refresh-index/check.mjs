@@ -27,7 +27,7 @@
 //   - reachable: false     — there is nothing to fetch, by design
 //   - no summarize_to      — the source is read live or held by a person
 //
-// Usage: node .github/scripts/refresh-context.mjs [--fingerprint]
+// Usage: node .github/scripts/check.mjs [--fingerprint]
 
 import { readFileSync, existsSync } from 'node:fs'
 import { createHash } from 'node:crypto'
@@ -284,7 +284,7 @@ export async function check({ manifestPath = 'context-manifest.yaml', today } = 
 // ---------------------------------------------------------------------------
 // Entry point
 // ---------------------------------------------------------------------------
-const invokedDirectly = process.argv[1] && process.argv[1].endsWith('refresh-context.mjs')
+const invokedDirectly = process.argv[1] && process.argv[1].endsWith('check.mjs')
 
 if (invokedDirectly) {
   // `--fingerprint` exists so nobody ever computes one by hand. The obvious move —

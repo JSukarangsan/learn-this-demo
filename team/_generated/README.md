@@ -7,7 +7,7 @@ the ops cohort calendar. **`/refresh-index` writes them, a person runs it, and n
 here happens on a schedule.**
 
 There is a helper, and it is worth knowing what it is not.
-**`.github/scripts/refresh-context.mjs` decides whether anything needs doing.** It reads
+**`.claude/skills/refresh-index/check.mjs` decides whether anything needs doing.** It reads
 `../../context-manifest.yaml`, fetches each source that declares a `summarize_to`, hashes
 the body, and compares that against the fingerprint in the generated file's banner, then
 reports `UNCHANGED`, `CHANGED`, `MISSING`, `OVERDUE` or `FAILED`. It is arithmetic, not
@@ -21,8 +21,8 @@ run in `refresh-log.md`. One writer, one entry per run.
 ## Running it
 
 ```sh
-node .github/scripts/refresh-context.mjs               # compare and report; writes nothing
-node .github/scripts/refresh-context.mjs --fingerprint # print the banner line to paste
+node .claude/skills/refresh-index/check.mjs               # compare and report; writes nothing
+node .claude/skills/refresh-index/check.mjs --fingerprint # print the banner line to paste
 ```
 
 Or just run `/refresh-index`, which does the above and then acts on it.

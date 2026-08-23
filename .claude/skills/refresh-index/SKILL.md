@@ -42,7 +42,7 @@ For **every** entry:
 ### 2. Fingerprint the cached entries
 
 ```sh
-node .github/scripts/refresh-context.mjs
+node .claude/skills/refresh-index/check.mjs
 ```
 
 **Yes, shell out — this one is arithmetic, not judgment.** The script fetches each
@@ -183,7 +183,7 @@ flags drift without being asked, and **it does not exist yet.** The comment at t
 `context-manifest.yaml` says so, and it stays true until it isn't. Don't describe this as
 though it does.
 
-`.github/scripts/refresh-context.mjs` is not that either, and the difference is the
+`.claude/skills/refresh-index/check.mjs` is not that either, and the difference is the
 division of labour rather than a wall. It answers *did the bytes change* —
 deterministically, without a model, without a credential — and it can say a pointer failed
 to resolve or an export is late. It cannot tell you whether a change matters, cannot decide

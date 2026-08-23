@@ -1,5 +1,5 @@
 /**
- * Run: node --test .github/scripts/*.test.mjs
+ * Run: node --test .claude/skills/refresh-index/check.test.mjs
  *
  * Nothing runs these automatically — there is no CI for this any more, on purpose. Run
  * them before trusting a change to the checker.
@@ -20,7 +20,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync } from 
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import { parseSources, check, sha256, byteLength, readFingerprint, overdueBy } from './refresh-context.mjs'
+import { parseSources, check, sha256, byteLength, readFingerprint, overdueBy } from './check.mjs'
 
 // A manifest shaped like the real one — one cached source, one live pointer, one
 // deliberately unreachable, one with a hand-maintained copy. Every skip rule, once.

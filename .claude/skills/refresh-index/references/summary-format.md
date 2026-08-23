@@ -2,7 +2,7 @@
 
 `SKILL.md` says what to read; this says what to write.
 
-This is the **only** copy of these rules. `.github/scripts/refresh-context.mjs` used to
+This is the **only** copy of these rules. `.claude/skills/refresh-index/check.mjs` used to
 carry a second one in a `PROMPT` constant and a banner template, and the skill restated both
 by hand — two copies of the same judgment, with a co-edit obligation nobody would remember.
 The script no longer summarizes, so there is one writer of generated summaries and one place
@@ -35,7 +35,7 @@ starts before it:
 Naming a workflow that didn't run is the exact silent gap the refresh log exists to catch.
 
 **The fingerprint line is not decoration — it is the entire change-detection mechanism.**
-`refresh-context.mjs` reads it back out to decide whether anything needs doing. Write it
+`check.mjs` reads it back out to decide whether anything needs doing. Write it
 wrong and every future run reports the file as drifted and regenerates it from scratch.
 The sources it points at expose no `Last-Modified`, no `ETag` and no `Content-Length`, so
 this hash is the only thing standing between the team and a summary nobody can date.
@@ -43,7 +43,7 @@ this hash is the only thing standing between the team and a summary nobody can d
 **Never compute the fingerprint yourself. Ask for it:**
 
 ```sh
-node .github/scripts/refresh-context.mjs --fingerprint
+node .claude/skills/refresh-index/check.mjs --fingerprint
 ```
 
 It prints the line to paste, per source. The obvious alternative —
