@@ -3,41 +3,49 @@
 **Nothing in this folder is hand-written, and nothing in it is canonical.**
 
 Every file here is a summary of a document owned somewhere else — the H2 planning doc and
-the ops cohort calendar. Two halves produce them, and the split is worth understanding
-before you run either.
+the ops cohort calendar. **`/refresh-index` writes them, a person runs it, and nothing
+here happens on a schedule.**
 
+There is a helper, and it is worth knowing what it is not.
 **`.github/scripts/refresh-context.mjs` decides whether anything needs doing.** It reads
 `../../context-manifest.yaml`, fetches each source that declares a `summarize_to`, hashes
-the body, and compares that against the fingerprint in the generated file's banner. It
-reports `UNCHANGED`, `CHANGED`, `MISSING` or `FAILED`, writes its own log entry, and opens
-a PR when something actually moved. **It cannot summarize and never writes a file here.**
+the body, and compares that against the fingerprint in the generated file's banner, then
+reports `UNCHANGED`, `CHANGED`, `MISSING`, `OVERDUE` or `FAILED`. It is arithmetic, not
+judgment — **it calls no model and writes nothing at all.**
 
-**`/refresh-index` does the part that needs judgment.** When the script says a source
-moved, the skill reads it, works out whether anything the summary asserts is now wrong,
-and writes the smallest change that makes the file true again — often one line, not a
-regenerated file.
+**`/refresh-index` does the rest.** When the checker says a source moved, the skill reads
+it, works out whether anything the summary asserts is now wrong, writes the smallest change
+that makes the file true again — often one line, not a regenerated file — and records the
+run in `refresh-log.md`. One writer, one entry per run.
 
 ## Running it
 
 ```sh
-node .github/scripts/refresh-context.mjs --dry-run     # compare, report, write nothing
-node .github/scripts/refresh-context.mjs               # compare and append the log entry
+node .github/scripts/refresh-context.mjs               # compare and report; writes nothing
 node .github/scripts/refresh-context.mjs --fingerprint # print the banner line to paste
 ```
 
-**No credential, for either half.** The script doesn't call a model, and `/refresh-index`
-runs inside a session that already is one. `ANTHROPIC_API_KEY` used to be required and is
-now referenced nowhere.
+Or just run `/refresh-index`, which does the above and then acts on it.
+
+**No credential, anywhere.** The checker doesn't call a model, and `/refresh-index` runs
+inside a session that already is one. `ANTHROPIC_API_KEY` used to be required and is now
+referenced nowhere.
 
 **Never write a fingerprint by hand.** Use `--fingerprint`. `curl … | shasum -a 256`
 computes a different digest — these exports carry a UTF-8 BOM that `fetch().text()` strips
 — and a fingerprint that can't match makes the source look like it changes on every run.
 That has happened once here; see the 2026-08-21 entry in `refresh-log.md`.
 
-The Monday cron in `.github/workflows/refresh-context.yml` is still commented out, but the
-reason it was disabled is gone: it was off because a key couldn't be stored in a public
-repo, and there is no longer a key. What's left is a question about noise — a weekly run
-that finds nothing still opens a PR carrying its log entry. Decide that before uncommenting.
+## There is no scheduled job, and that is the trade
+
+There was one: a GitHub Action that fetched, summarized and opened a PR. It is gone, along
+with its credential. What replaced it is a person running a skill.
+
+The cost is real and worth saying rather than hiding: **this folder is only as current as
+the last entry in `refresh-log.md`.** Nothing will notice drift while nobody is looking.
+The bet is that a check somebody runs is a check somebody reads, and that a weekly PR
+nobody reviews was never actually keeping anything current — it was just making the
+staleness harder to see.
 
 ## Why summaries and not copies
 
@@ -53,20 +61,18 @@ fix the pointer, or the rules in
 ## The log
 
 `refresh-log.md` is the exception to everything below: it is appended to, never overwritten,
-and it is the only file here that survives a run producing nothing. Both halves of the
-addressing layer write to it — the pipeline every time it runs, `/refresh-index` every time
-a person checks the pointers — and each entry says which.
+and it is the only file here that survives a run producing nothing. `/refresh-index` writes
+it, once per run.
 
-It is there because the pipeline's failure mode is silence. It was scheduled for Mondays and
-produced nothing for months; every pointer resolved, every source was real, and the missing
-`ANTHROPIC_API_KEY` meant the summarize step never executed. Nothing surfaced that, because
-a workflow that writes no files opens no PR. So every run writes itself down, including the
-runs that find nothing.
+It exists because this whole mechanism fails silently. The old scheduled version proved it
+the hard way: it ran for months, every pointer resolved, every source was real, and a
+missing credential meant the summarize step never once executed. Nothing surfaced that,
+because a workflow that writes no files opens no PR. So every run writes itself down,
+including — especially — the runs that find nothing.
 
-**A PR now opens only when something actually moved** — `changed` used to be hardcoded true,
-which meant every run proposed a PR carrying nothing but its own log entry. That is the
-noise the fingerprint exists to stop, and it is the open question hanging over re-enabling
-the cron: a quiet scheduled run still writes a log entry that nothing then commits.
+That failure mode did not go away when the schedule did. It moved: the way this gets stale
+now is that nobody runs it. Same answer, same file. **The date on the newest entry is the
+honest measure of how current this folder is.**
 
 ## Rules
 
@@ -74,12 +80,16 @@ the cron: a quiet scheduled run still writes a log entry that nothing then commi
   manifest entry that points at it.
 - **If one of these disagrees with its source, the source wins.** The banner at the top of
   each file says so, for the benefit of an agent that reads only this folder.
-- **A PR, not a commit.** The pipeline proposes and a person confirms. Same rule
-  `/refresh-index` follows. A bad summary that lands silently becomes the team's context.
+- **Generated summaries live here and nowhere else.** A `summarize_to` aimed at `insights/`
+  or `engineering/` is a manifest error and the checker fails it. Those folders hold what a
+  named person knows and a refresh does not, and a guessed file there is worse than an empty
+  one.
+- **Nothing lands unreviewed.** The skill proposes the edit in a session a person is
+  watching; a bad summary that lands silently becomes the team's context.
 - **Not everything upstream belongs here.** `product_ui` is pulled live because visual state
   doesn't survive being described in prose. `vendor_video_sla` has no API, so a person
-  exports it into `insights/` by hand and that export is authoritative. The manifest marks
-  both, and the pipeline skips them.
+  exports it into `insights/` by hand and that export is authoritative — what the checker
+  can say about that one is only whether the export is overdue. The manifest marks both.
 
 ## The honest limit
 

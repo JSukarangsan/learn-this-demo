@@ -1,13 +1,16 @@
 /**
  * Run: node --test .github/scripts/*.test.mjs
  *
- * This pipeline's failure mode is silence. It ran on a schedule for months, produced
- * nothing, and nobody noticed — so these tests are aimed at the three ways that happens:
- * the manifest rule that fails a source it shouldn't, a run that leaves no trace, and a
- * gate that reports "unchanged" when it has no idea.
+ * Nothing runs these automatically — there is no CI for this any more, on purpose. Run
+ * them before trusting a change to the checker.
+ *
+ * The failure mode being defended against is a check that reports something reassuring
+ * when it has no idea: a manifest rule that fails a source it shouldn't, a fingerprint
+ * that can never match, an "unchanged" derived from nothing, and a generated summary
+ * written somewhere it does not belong.
  *
  * The fetch path is exercised against a real local HTTP server rather than mocked, so
- * a change to the fetch step is caught here instead of on a Monday morning.
+ * a change to the fetch step is caught here rather than in front of somebody.
  */
 
 import { test, describe, before, after } from 'node:test'
@@ -17,7 +20,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync } from 
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import { parseSources, check, sha256, byteLength, readFingerprint, renderLogEntry, insertLogEntry } from './refresh-context.mjs'
+import { parseSources, check, sha256, byteLength, readFingerprint, overdueBy } from './refresh-context.mjs'
 
 // A manifest shaped like the real one — one cached source, one live pointer, one
 // deliberately unreachable, one with a hand-maintained copy. Every skip rule, once.
@@ -131,7 +134,7 @@ describe('the cached-or-pointed-at rule', () => {
     // refresh value that means "there is deliberately no copy" — demanding a path from
     // it inverts what it says, and the exit code it produced killed the PR step.
     setup(manifest('https://127.0.0.1:1/unused'))
-    const { failed } = await check({ dryRun: true, today: '2026-08-19' })
+    const { failed } = await check({ today: '2026-08-19' })
     assert.equal(
       failed.some((f) => f.name === 'cohort_scheduling_flow'),
       false,
@@ -141,7 +144,7 @@ describe('the cached-or-pointed-at rule', () => {
 
   test('a real cadence with nowhere to write still fails', async () => {
     setup(manifest('https://127.0.0.1:1/unused').replace('refresh: live', 'refresh: weekly'))
-    const { failed } = await check({ dryRun: true, today: '2026-08-19' })
+    const { failed } = await check({ today: '2026-08-19' })
     const f = failed.find((x) => x.name === 'cohort_scheduling_flow')
     assert.ok(f, 'a cadence on a source with no path is somebody assuming a copy exists')
     assert.match(f.why, /names no file in this repo/)
@@ -149,12 +152,74 @@ describe('the cached-or-pointed-at rule', () => {
 
   test('each kind of skip says which kind it is', async () => {
     setup(manifest('https://127.0.0.1:1/unused'))
-    const { skipped } = await check({ dryRun: true, today: '2026-08-19' })
+    const { skipped } = await check({ today: '2026-08-19' })
     const why = Object.fromEntries(skipped.map((s) => [s.name, s.why]))
     assert.match(why.product_backlog, /read the source/)
     assert.match(why.vendor_video_sla, /a person maintains/)
     assert.match(why.restricted_source, /deliberately out of reach/)
     assert.equal(why.cohort_scheduling_flow, 'no copy in this repo, read the source')
+  })
+})
+
+describe('generated summaries stay inside team/_generated/', () => {
+  let dir
+
+  before(() => {
+    dir = mkdtempSync(join(tmpdir(), 'refresh-guard-'))
+    process.chdir(dir)
+    mkdirSync(join(dir, 'team/_generated'), { recursive: true })
+  })
+
+  test('a summarize_to aimed at a discipline folder is a manifest error', async () => {
+    // The one that matters. A refresh rewriting insights/definitions.md would be
+    // overwriting a file whose knowledge belongs to a named person who is not in the room
+    // when the skill runs — and guessed content there is worse than an empty file,
+    // because the lead reading it later cannot tell which lines to trust.
+    writeFileSync(
+      join(dir, 'context-manifest.yaml'),
+      manifest('https://127.0.0.1:1/unused').replace(
+        'summarize_to: team/_generated/h2-planning.md',
+        'summarize_to: insights/definitions.md',
+      ),
+    )
+    const { failed } = await check({ today: '2026-08-19' })
+    const f = failed.find((x) => x.name === 'h2_planning')
+    assert.ok(f, 'writing outside team/_generated/ must not be allowed to pass quietly')
+    assert.match(f.why, /outside `team\/_generated\/`/)
+    assert.match(f.why, /filled with its lead/)
+  })
+
+  test('team/_generated/ itself is fine', async () => {
+    writeFileSync(join(dir, 'context-manifest.yaml'), manifest('https://127.0.0.1:1/unused'))
+    const { failed } = await check({ today: '2026-08-19' })
+    assert.equal(failed.some((f) => /outside/.test(f.why)), false)
+  })
+})
+
+describe('an overdue hand-maintained export is a finding', () => {
+  test('inside its cadence, nothing is said', () => {
+    assert.equal(overdueBy('quarterly', '2026-08-04', '2026-08-19'), null)
+  })
+
+  test('past its cadence, it is reported with the gap', () => {
+    // There is no upstream to compare against — that is why a person exports it. So the
+    // only checkable promise is whether the export happened, and a quarterly export that
+    // last landed in January is exactly the finding this entry shape exists to surface.
+    const late = overdueBy('quarterly', '2026-01-04', '2026-08-19')
+    assert.ok(late)
+    assert.equal(late.window, 92)
+    assert.ok(late.days > 92, 'and it says how far past, not just that it is past')
+  })
+
+  test('as-needed has no schedule, so it can never be late', () => {
+    assert.equal(overdueBy('as-needed', '2020-01-01', '2026-08-19'), null)
+  })
+
+  test('nothing to measure from is not a finding either', () => {
+    // A missing last_confirmed means nobody has ever confirmed it, which is a different
+    // problem and belongs to the pointer check, not to this one. Reporting it as overdue
+    // would put a date on a promise nobody made.
+    assert.equal(overdueBy('quarterly', undefined, '2026-08-19'), null)
   })
 })
 
@@ -206,70 +271,6 @@ describe('the fingerprint — reading it back out', () => {
   })
 })
 
-describe('the run log', () => {
-  test('the newest entry goes above the older ones, under the header', () => {
-    const existing = ['# Refresh log', '', 'Newest first.', '', '---', '', '## 2026-08-16', '', 'older'].join('\n')
-    const out = insertLogEntry(existing, '## 2026-08-19\n\nnewer\n')
-    assert.ok(out.indexOf('## 2026-08-19') < out.indexOf('## 2026-08-16'), 'newest first')
-    assert.ok(out.indexOf('# Refresh log') < out.indexOf('## 2026-08-19'), 'below the header')
-    assert.match(out, /older/, 'and it never edits what was already there')
-  })
-
-  test('an entry names the run, the counts, and what actually moved', () => {
-    const entry = renderLogEntry({
-      today: '2026-08-19',
-      unchanged: [{ name: 'cohort_calendar', file: 'team/_generated/cohort-calendar.md' }],
-      changed: [{
-        name: 'h2_planning',
-        file: 'team/_generated/h2-planning.md',
-        wasSha: 'a'.repeat(64),
-        nowSha: 'b'.repeat(64),
-        wasBytes: 4000,
-        nowBytes: 4400,
-      }],
-      missing: [],
-      skipped: [{ name: 'restricted_source', why: 'deliberately out of reach' }],
-      failed: [{ name: 'cohort_x', why: 'got a Google sign-in page — the file is not link-shared' }],
-      runUrl: 'https://github.com/o/r/actions/runs/1',
-    })
-    assert.match(entry, /^## 2026-08-19 — pipeline$/m)
-    assert.match(entry, /4 checked — 1 unchanged, 1 changed, 0 missing, 1 skipped by design, 1 failed/)
-    assert.match(entry, /\*\*CHANGED\*\* — `h2_planning`/)
-    assert.match(entry, /4000 → 4400 bytes \(\+10%\)/, 'the magnitude of the change, not just that it changed')
-    assert.match(entry, /sha256 aaaaaaaa… → bbbbbbbb…/)
-    assert.match(entry, /\*\*FAILED\*\* — `cohort_x`/)
-    assert.match(entry, /Unchanged: `cohort_calendar`\./, 'the quiet ones collapse to one line')
-    assert.match(entry, /actions\/runs\/1/)
-  })
-
-  test('a run where nothing moved says so in one line, not a block per source', () => {
-    const entry = renderLogEntry({
-      today: '2026-08-19',
-      unchanged: [
-        { name: 'h2_planning', file: 'a.md' },
-        { name: 'cohort_calendar', file: 'b.md' },
-      ],
-      changed: [],
-      missing: [],
-      skipped: [{ name: 'product_backlog', why: 'no copy in this repo, read the source' }],
-      failed: [],
-    })
-    assert.match(entry, /Nothing moved\. Every cached copy still matches its source\./)
-    assert.equal(entry.includes('**CHANGED**'), false)
-    assert.ok(entry.split('\n').length < 12, 'a quiet run must stay short — this is the common case')
-  })
-
-  test('a dry run leaves no entry — it did not change anything', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'refresh-'))
-    process.chdir(dir)
-    writeFileSync(join(dir, 'context-manifest.yaml'), manifest('https://127.0.0.1:1/unused'))
-    mkdirSync(join(dir, 'team/_generated'), { recursive: true })
-    const { logged } = await check({ dryRun: true, today: '2026-08-19' })
-    assert.equal(logged, false)
-    assert.equal(existsSync(join(dir, 'team/_generated/refresh-log.md')), false)
-  })
-})
-
 describe('a real run, against a real server', () => {
   let server
   let url
@@ -313,7 +314,7 @@ describe('a real run, against a real server', () => {
     const body = generated(sha256(DOC_BODY), DOC_BODY.length)
     writeFileSync(target, body)
 
-    const { unchanged, changed, missing } = await check({ dryRun: true, today: '2026-08-19' })
+    const { unchanged, changed, missing } = await check({ today: '2026-08-19' })
 
     assert.equal(unchanged.length, 1)
     assert.equal(unchanged[0].name, 'h2_planning')
@@ -329,7 +330,7 @@ describe('a real run, against a real server', () => {
       generated('0'.repeat(64), 999),
     )
 
-    const { changed, unchanged } = await check({ dryRun: true, today: '2026-08-19' })
+    const { changed, unchanged } = await check({ today: '2026-08-19' })
 
     assert.equal(unchanged.length, 0)
     assert.equal(changed.length, 1)
@@ -344,7 +345,7 @@ describe('a real run, against a real server', () => {
     // Deleting a generated file is how you force a regenerate. If that read as unchanged
     // the file would never come back.
     setup()
-    const { missing, unchanged } = await check({ dryRun: true, today: '2026-08-19' })
+    const { missing, unchanged } = await check({ today: '2026-08-19' })
     assert.equal(unchanged.length, 0)
     assert.equal(missing.length, 1)
     assert.equal(missing[0].name, 'h2_planning')
@@ -359,30 +360,33 @@ describe('a real run, against a real server', () => {
     process.chdir(dir)
     mkdirSync(join(dir, 'team/_generated'), { recursive: true })
     writeFileSync(join(dir, 'context-manifest.yaml'), manifest(`${url}/signin`))
-    const { failed } = await check({ dryRun: true, today: '2026-08-19' })
+    const { failed } = await check({ today: '2026-08-19' })
     const f = failed.find((x) => x.name === 'h2_planning')
     assert.ok(f)
     assert.match(f.why, /not link-shared/)
   })
 
-  test('a full run needs no API key, and still writes the log', async () => {
-    // The script no longer calls a model, so there is nothing left for a credential to
-    // unlock. A run with no key in the environment must be an ordinary, complete run.
+  test('a full run needs no credential and writes nothing at all', async () => {
+    // Two properties in one, and both are load-bearing. There is no model call left, so
+    // no key is needed. And the script is read-only: the skill is the single writer, so
+    // one run produces one log entry written by the thing that also made the judgment,
+    // rather than two entries disagreeing about how much they understood.
     delete process.env.ANTHROPIC_API_KEY
     const d = setup()
     writeFileSync(
       join(d, 'team/_generated/h2-planning.md'),
-      generated(sha256(DOC_BODY), DOC_BODY.length),
+      generated(sha256(DOC_BODY), byteLength(DOC_BODY)),
     )
 
-    const { failed, logged, report } = await check({ today: '2026-08-19' })
+    const { failed, unchanged, report } = await check({ today: '2026-08-19' })
 
-    assert.equal(failed.length, 0, 'a missing key is not a failure any more — nothing needs one')
-    assert.equal(logged, true)
+    assert.equal(failed.length, 0, 'a missing key is not a failure — nothing needs one')
+    assert.equal(unchanged.length, 1)
     assert.equal(/ANTHROPIC_API_KEY/.test(report), false, 'nothing should mention a key')
-
-    const log = readFileSync(join(d, 'team/_generated/refresh-log.md'), 'utf8')
-    assert.match(log, /## 2026-08-19 — pipeline/)
-    assert.match(log, /Nothing moved/)
+    assert.equal(
+      existsSync(join(d, 'team/_generated/refresh-log.md')),
+      false,
+      'the checker does not write the log — the skill does',
+    )
   })
 })

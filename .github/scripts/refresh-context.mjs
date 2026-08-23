@@ -5,44 +5,49 @@
 // It reads the manifest and does what the manifest says. Adding a source is a manifest
 // edit, not a code change.
 //
-// THIS SCRIPT DOES NOT SUMMARIZE, AND DOES NOT WRITE SUMMARY FILES. It answers one
-// question per cached source — did the source change since the copy was generated — and
-// leaves the judgment about what to do with that to /refresh-index, which has a model and
-// doesn't need a credential to reach one. That split is why there is no ANTHROPIC_API_KEY
-// here: the only thing that ever needed it was the summarize call, and that call has moved
-// to the skill.
+// THIS SCRIPT WRITES NOTHING. It is the deterministic half of /refresh-index — the part
+// that is arithmetic rather than judgment, and that shouldn't cost a model call to do.
+// It fetches, hashes, compares, and prints. Deciding what a change means, rewriting a
+// summary, and recording the run are the skill's job, and the skill is the only thing
+// that writes into this repo. One writer, one log entry per run.
+//
+// There is no CI wrapper and no scheduled job. This is run by a person, or by the skill
+// on a person's behalf. That is also why there is no credential anywhere in here: the
+// only thing that ever needed one was summarizing, and summarizing belongs to whoever
+// invoked the skill.
 //
 // The change signal is a content hash, not a timestamp, and that is not a preference. The
 // Google export endpoints these sources use return no Last-Modified, no ETag and no
 // Content-Length, so there is nothing to compare a date against — which is why every run
-// before this one reported UNKNOWN forever. The bodies are byte-stable, so a SHA-256 of
-// the body answers definitively what a date cannot.
+// before fingerprints existed reported UNKNOWN forever. The bodies are byte-stable, so a
+// SHA-256 of the body answers definitively what a date cannot.
 //
-// Deliberately skipped:
+// Deliberately not fetched:
 //   - refresh: live        — pulled at query time, never cached
 //   - reachable: false     — there is nothing to fetch, by design
 //   - no summarize_to      — the source is read live or held by a person
 //
-// Every run appends an entry to team/_generated/refresh-log.md, including the runs that
-// found nothing. That log is the only durable answer to "when did this last run", and a
-// run that found nothing is exactly the run nobody would otherwise notice.
-//
-// Usage: node .github/scripts/refresh-context.mjs [--dry-run]
+// Usage: node .github/scripts/refresh-context.mjs [--fingerprint]
 
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs'
+import { readFileSync, existsSync } from 'node:fs'
 import { createHash } from 'node:crypto'
-import { dirname } from 'node:path'
-
-const LOG_PATH = 'team/_generated/refresh-log.md'
 
 // `live` is the one `refresh:` value that means "there is no copy". Everything else is
 // a cadence, and a cadence on a source with nowhere to write is a mistake worth catching.
 const UNCACHED_REFRESH = 'live'
 
+// Generated summaries live here and nowhere else. See GENERATED_ROOT's use below for why
+// this is enforced rather than merely documented.
+const GENERATED_ROOT = 'team/_generated/'
+
 // The fingerprint the generated file carries in its banner, and the only state this whole
 // mechanism keeps. It lives in the file it describes rather than a sidecar: nothing can
 // desync from it, and deleting a generated file correctly forces a regenerate.
 const FINGERPRINT = /Source fingerprint: sha256:([0-9a-f]{64}) \((\d+) bytes\)/
+
+// How long a person-maintained copy may go unconfirmed before the export is overdue.
+// `as-needed` has no schedule, so it can never be late.
+const CADENCE_DAYS = { weekly: 7, monthly: 31, quarterly: 92, annual: 366 }
 
 // ---------------------------------------------------------------------------
 // A very small YAML reader. The manifest is a fixed, flat shape that we control,
@@ -139,123 +144,33 @@ export function readFingerprint(path, io = { readFileSync, existsSync }) {
 }
 
 // ---------------------------------------------------------------------------
-// The run log
+// Is a hand-maintained export overdue?
 //
-// team/_generated/refresh-log.md holds two kinds of entry — a /refresh-index run, which
-// a person drives, and a pipeline run, which this writes. Both answer the same question
-// and splitting them across two files would split the answer, so they share a file and
-// each entry says which one it was.
-//
-// Newest first, and old entries are never touched. A later run disagreeing with an
-// earlier one is the useful part.
+// The only thing that can be checked about a copy_of_record. There is no upstream to
+// reach — that is why a person exports it — so the question is not whether the copy
+// matches, it is whether the export that was promised actually happened. An export that
+// was supposed to land quarterly and didn't is a real finding, and it is the entire
+// reason to write the entry this way instead of giving up on the source.
 // ---------------------------------------------------------------------------
-const LOG_HEADER = `# Refresh log
-
-**Derived, not authored.** Newest first. Nothing here is canonical and deleting it costs
-nothing except the answer to *when did anyone last check this*, which is the only question
-it exists to answer.
-
-Two kinds of entry, both marked in their heading. **pipeline** is
-\`.github/workflows/refresh-context.yml\` writing down what it fetched. **/refresh-index**
-is a person checking the pointers themselves. They answer the same question from opposite
-ends — one proves the fetching still works, the other proves the addresses are still right
-— and a run of either without the other leaves half the layer unchecked.
-
-Entries are never edited after the fact. If a later run disagrees with an earlier one, that
-disagreement is the useful part.
-
----
-`
-
-const short = (sha) => sha.slice(0, 8)
-
-const delta = (was, now) => {
-  const pct = was ? Math.round(((now - was) / was) * 1000) / 10 : 0
-  return `${was} → ${now} bytes (${pct >= 0 ? '+' : ''}${pct}%)`
-}
-
-// One block per source that did something; everything quiet collapses to a single line.
-// The log obeys the same rule as the summaries it tracks: don't write a paragraph to say
-// nothing happened.
-export function renderLogEntry({ today, unchanged, changed, missing, skipped, failed, runUrl, dryRun }) {
-  const counts = [
-    `${unchanged.length} unchanged`,
-    `${changed.length} changed`,
-    `${missing.length} missing`,
-    `${skipped.length} skipped by design`,
-    ...(failed.length ? [`${failed.length} failed`] : []),
-  ].join(', ')
-
-  const total = unchanged.length + changed.length + missing.length + skipped.length + failed.length
-
-  const lines = [
-    `## ${today} — pipeline${dryRun ? ' (dry run)' : ''}`,
-    '',
-    `\`refresh-context.yml\`. ${total} checked — ${counts}.${runUrl ? ` [Run log](${runUrl}).` : ''}`,
-  ]
-
-  for (const r of failed) {
-    lines.push('', `**FAILED** — \`${r.name}\``, r.why)
-  }
-
-  for (const r of changed) {
-    lines.push(
-      '',
-      `**CHANGED** — \`${r.name}\``,
-      `${delta(r.wasBytes, r.nowBytes)}. sha256 ${short(r.wasSha)}… → ${short(r.nowSha)}….`,
-      `\`${r.file}\` was generated from the older version — run \`/refresh-index\` to judge`,
-      'whether anything the summary asserts is now wrong.',
-    )
-  }
-
-  for (const r of missing) {
-    lines.push(
-      '',
-      `**MISSING** — \`${r.name}\``,
-      `\`${r.file}\` ${r.why}. Nothing to compare against, so this needs a first pass from`,
-      `\`/refresh-index\`. Source is ${r.nowBytes} bytes, sha256 ${short(r.nowSha)}….`,
-    )
-  }
-
-  if (unchanged.length) {
-    lines.push('', `Unchanged: ${unchanged.map((r) => `\`${r.name}\``).join(', ')}.`)
-  }
-  if (skipped.length) {
-    lines.push('', `Skipped by design: ${skipped.map((r) => `\`${r.name}\``).join(', ')}.`)
-  }
-  if (!changed.length && !missing.length && !failed.length) {
-    lines.push('', 'Nothing moved. Every cached copy still matches its source.')
-  }
-
-  return lines.join('\n') + '\n'
-}
-
-// Insert below the header rule, so the newest entry is the first one you read.
-export function insertLogEntry(existing, entry) {
-  const lines = existing.split('\n')
-  const rule = lines.findIndex((l, i) => i > 0 && l.trim() === '---')
-  if (rule === -1) return existing.replace(/\s*$/, '\n') + '\n' + entry
-  const head = lines.slice(0, rule + 1).join('\n')
-  const tail = lines.slice(rule + 1).join('\n').replace(/^\n+/, '')
-  return `${head}\n\n${entry}\n${tail}`
-}
-
-export function appendToLog(entry, { path = LOG_PATH, io = { readFileSync, writeFileSync, existsSync, mkdirSync } } = {}) {
-  const existing = io.existsSync(path) ? io.readFileSync(path, 'utf8') : LOG_HEADER
-  io.mkdirSync(dirname(path), { recursive: true })
-  io.writeFileSync(path, insertLogEntry(existing, entry))
+export function overdueBy(refresh, lastConfirmed, today) {
+  const window = CADENCE_DAYS[refresh]
+  if (!window || !lastConfirmed) return null // no schedule, or nothing to measure from
+  const days = Math.floor((Date.parse(today) - Date.parse(lastConfirmed)) / 86_400_000)
+  if (Number.isNaN(days) || days <= window) return null
+  return { days, window }
 }
 
 // ---------------------------------------------------------------------------
 // Run
 // ---------------------------------------------------------------------------
-export async function check({ dryRun = false, manifestPath = 'context-manifest.yaml', today, logPath = LOG_PATH } = {}) {
+export async function check({ manifestPath = 'context-manifest.yaml', today } = {}) {
   const sources = parseSources(readFileSync(manifestPath, 'utf8'))
   const date = today || new Date().toISOString().slice(0, 10)
   const unchanged = []
   const changed = []
   const missing = []
   const skipped = []
+  const overdue = []
   const failed = []
 
   // The manifest's one rule, made executable. An entry either names a file in this repo
@@ -272,16 +187,42 @@ export async function check({ dryRun = false, manifestPath = 'context-manifest.y
         why: `has \`refresh: ${src.refresh}\` but names no file in this repo. Either give it a path, or say \`refresh: live\`.`,
       })
     }
+    // Generated summaries only ever land in team/_generated/. A summarize_to pointing at
+    // a discipline folder would have /refresh-index rewriting insights/definitions.md or
+    // engineering/constraints.md on every drift — files whose knowledge belongs to a
+    // named person who is not in the room when the skill runs. Guessed content there is
+    // worse than an empty file, because the lead who reads it later has to work out which
+    // lines to trust before they can fix it.
+    if (src.summarize_to && !src.summarize_to.startsWith(GENERATED_ROOT)) {
+      failed.push({
+        name,
+        why: `writes to \`${src.summarize_to}\`, outside \`${GENERATED_ROOT}\`. Generated summaries only go there — a discipline folder is filled with its lead, never by a refresh.`,
+      })
+    }
   }
 
   for (const [name, src] of Object.entries(sources)) {
     if (!src.summarize_to) {
-      const why = src.copy_of_record
-        ? `a person maintains ${src.copy_of_record}`
-        : src.deliberate
-          ? 'deliberately out of reach'
-          : 'no copy in this repo, read the source'
-      skipped.push({ name, why })
+      if (src.copy_of_record) {
+        const late = overdueBy(src.refresh, src.last_confirmed, date)
+        if (late) {
+          overdue.push({
+            name,
+            file: src.copy_of_record,
+            refresh: src.refresh,
+            lastConfirmed: src.last_confirmed,
+            ...late,
+            exists: existsSync(src.copy_of_record),
+          })
+          continue
+        }
+        skipped.push({ name, why: `a person maintains ${src.copy_of_record}` })
+        continue
+      }
+      skipped.push({
+        name,
+        why: src.deliberate ? 'deliberately out of reach' : 'no copy in this repo, read the source',
+      })
       continue
     }
     if (src.reachable === false) {
@@ -321,32 +262,23 @@ export async function check({ dryRun = false, manifestPath = 'context-manifest.y
     }
   }
 
+  const pct = (was, now) => (was ? Math.round(((now - was) / was) * 1000) / 10 : 0)
   const report = [
     changed.length
-      ? `Changed:\n  ${changed.map((r) => `${r.name} — ${delta(r.wasBytes, r.nowBytes)} → ${r.file}`).join('\n  ')}`
+      ? `Changed:\n  ${changed.map((r) => `${r.name} — ${r.wasBytes} → ${r.nowBytes} bytes (${pct(r.wasBytes, r.nowBytes) >= 0 ? '+' : ''}${pct(r.wasBytes, r.nowBytes)}%), sha256 ${r.wasSha.slice(0, 8)}… → ${r.nowSha.slice(0, 8)}… → ${r.file}`).join('\n  ')}`
       : '',
     missing.length
-      ? `\nMissing:\n  ${missing.map((r) => `${r.name} — ${r.file} ${r.why}`).join('\n  ')}`
+      ? `\nMissing:\n  ${missing.map((r) => `${r.name} — ${r.file} ${r.why}. Source is ${r.nowBytes} bytes, sha256 ${r.nowSha.slice(0, 8)}…`).join('\n  ')}`
+      : '',
+    overdue.length
+      ? `\nOverdue:\n  ${overdue.map((r) => `${r.name} — ${r.file} was due ${r.refresh}, last confirmed ${r.lastConfirmed} (${r.days} days ago)${r.exists ? '' : ', and the file is missing entirely'}`).join('\n  ')}`
       : '',
     unchanged.length ? `\nUnchanged:\n  ${unchanged.map((r) => r.name).join('\n  ')}` : '',
     skipped.length ? `\nSkipped, by design:\n  ${skipped.map((r) => `${r.name} — ${r.why}`).join('\n  ')}` : '',
     failed.length ? `\nFailed:\n  ${failed.map((r) => `${r.name} — ${r.why}`).join('\n  ')}` : '',
   ].filter(Boolean).join('\n') || 'Nothing in the manifest declares a summarize_to.'
 
-  // The run log is written even when the run failed outright, and especially then. A
-  // pipeline that quietly does nothing for four months is the failure this repo exists
-  // to make visible, so the record of the attempt has to survive the attempt.
-  const runUrl = process.env.GITHUB_RUN_ID && process.env.GITHUB_REPOSITORY
-    ? `${process.env.GITHUB_SERVER_URL || 'https://github.com'}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`
-    : null
-
-  let logged = false
-  if (!dryRun) {
-    appendToLog(renderLogEntry({ today: date, unchanged, changed, missing, skipped, failed, runUrl, dryRun }), { path: logPath })
-    logged = true
-  }
-
-  return { unchanged, changed, missing, skipped, failed, report, logged }
+  return { unchanged, changed, missing, skipped, overdue, failed, report }
 }
 
 // ---------------------------------------------------------------------------
@@ -374,22 +306,8 @@ if (invokedDirectly) {
     process.exit(0)
   }
 
-  const dryRun = process.argv.includes('--dry-run')
-  const { changed, missing, failed, report, logged } = await check({ dryRun })
-
+  const { failed, report } = await check()
   console.log(report)
-  if (logged) console.log(`\nLogged to ${LOG_PATH}.`)
-
-  if (process.env.GITHUB_OUTPUT && existsSync(process.env.GITHUB_OUTPUT)) {
-    // Only propose a PR when something actually moved. This used to be hardcoded true —
-    // every run opened a PR carrying nothing but its own log entry, which is the noise
-    // this whole change exists to stop.
-    const actionable = changed.length > 0 || missing.length > 0
-    writeFileSync(process.env.GITHUB_OUTPUT, `changed=${actionable}\n`, { flag: 'a' })
-  }
   // A source that should be reachable and isn't is the thing worth being told about.
-  // The exit code fails the step; it must not decide whether the PR opens, because the
-  // sources that did resolve are still worth proposing and the log entry is still worth
-  // keeping. The workflow gates the PR on `changed`, not on this.
   if (failed.length) process.exit(1)
 }

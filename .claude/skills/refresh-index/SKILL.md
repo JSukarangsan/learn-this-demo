@@ -45,11 +45,17 @@ For **every** entry:
 node .github/scripts/refresh-context.mjs
 ```
 
-**Yes, shell out — this one is deterministic and needs no key.** The script fetches each
+**Yes, shell out — this one is arithmetic, not judgment.** The script fetches each
 `summarize_to` source, hashes the body, and compares it against the fingerprint in the
-generated file's banner. It reports `UNCHANGED`, `CHANGED`, `MISSING` or `FAILED` per
-source and writes its own `— pipeline` log entry. It cannot summarize and cannot write a
-summary file; that half is yours.
+generated file's banner. It reports `UNCHANGED`, `CHANGED`, `MISSING`, `OVERDUE` or
+`FAILED` per source.
+
+**It writes nothing.** No summaries, no log entry, no manifest edits — it prints and
+exits. Everything written in a run of this skill is written by you, which is what keeps
+one run to one log entry, recorded by the thing that actually did the judging.
+
+It also reports two manifest errors worth knowing about: a `refresh:` cadence on a source
+that names no file, and a `summarize_to` pointing outside `team/_generated/`.
 
 **`UNCHANGED` means stop.** Don't fetch the source again, don't read it into context, don't
 regenerate anything. A byte-identical source means the existing summary is definitionally
@@ -66,6 +72,19 @@ Only for what phase 2 flagged `CHANGED` or `MISSING`. Read the current source an
 existing summary, and decide what actually moved. **Format, section order, the banner and
 the rewrite rules are in `references/summary-format.md`. Read it before writing a line.**
 
+**You write into `team/_generated/` and nowhere else.** Not `product/`, not
+`engineering/`, not `design/`, not `insights/`. Those folders hold what one named person
+knows and you do not — what a metric actually means, which constraint bites in practice,
+what the design system will not do — and that person is not in the room when this runs. A
+generated file there looks finished and is a guess, which is worse than an empty one:
+the lead who reads it later has to work out which lines to trust before they can fix
+anything, and most will start over. The script fails a manifest entry that tries, and if
+one ever gets past it, **stop and say so rather than writing the file.**
+
+`OVERDUE` is not yours to fix either. A `copy_of_record` is hand-exported *because* there
+is nothing to fetch, so there is no version of this skill that can rebuild one. Report it,
+name the owner from the manifest, and leave it.
+
 The short version, because it is the point of the whole design: **the size of the edit
 matches the size of what moved upstream.** A changed target number is a one-line edit, not
 a regenerated file. A full regenerate is for a source that was reorganized.
@@ -81,14 +100,15 @@ It exists for one reason. The manifest's failure mode is that nobody notices, an
 anyone last check this"* is unanswerable if the check only ever printed to somebody's
 terminal. The log turns that into a date you can read.
 
-Head the entry `## {date} — /refresh-index`. The script writes into the same file and marks
-its entries `— pipeline`, so an unlabelled entry is ambiguous about which half of the layer
-got checked. **Never edit an old entry.** If a later run disagrees with an earlier one, that
-disagreement is the useful part.
+Head the entry `## {date} — /refresh-index`. **One run, one entry** — you are the only
+thing that writes here. Entries dated before 2026-08-23 carry a `— pipeline` label from
+when a scheduled workflow also wrote to this file; that workflow is gone and the label is
+history, not a pattern to copy.
 
-**Read the pipeline entry your own run just produced before you write yours.** It carries
-the fingerprints and the failures, and a source that resolves fine from your terminal and
-403s from the runner is still a broken pointer.
+**Never edit an old entry.** If a later run disagrees with an earlier one, that
+disagreement is the useful part — including when the earlier run was wrong. There is a
+false positive in here from a mis-computed fingerprint, left deliberately, because the
+next person to see a source that "changes" every run needs to find it.
 
 ## What to report
 
@@ -111,6 +131,10 @@ Fingerprint matches. Nothing fetched twice, nothing rewritten.
 
 **UNREACHABLE** — `{key}`
 `reachable: true` claimed, but isn't. {what happened}.
+
+**OVERDUE** — `{key}`
+Hand-maintained copy, {n} days past its {cadence} cadence. {owner} rebuilds it; nothing
+here can.
 ```
 
 **Collapse the quiet ones.** Entries that confirmed clean with nothing to say are a single
@@ -159,9 +183,17 @@ flags drift without being asked, and **it does not exist yet.** The comment at t
 `context-manifest.yaml` says so, and it stays true until it isn't. Don't describe this as
 though it does.
 
-`.github/scripts/refresh-context.mjs` is not that either, and the difference is now the
-division of labour rather than a wall. It answers *did the bytes change* — deterministically,
-without a model, without a credential — and it can say a pointer failed to resolve. It
-cannot tell you whether a change matters, cannot decide between editing a line and rewriting
-a file, and cannot write a summary at all. Phase 3 is the part only a person or an agent can
-do, and it is the reason this skill exists on top of the script rather than beside it.
+`.github/scripts/refresh-context.mjs` is not that either, and the difference is the
+division of labour rather than a wall. It answers *did the bytes change* —
+deterministically, without a model, without a credential — and it can say a pointer failed
+to resolve or an export is late. It cannot tell you whether a change matters, cannot decide
+between editing a line and rewriting a file, and writes nothing at all. Phase 3 is the part
+only a person or an agent can do, and it is why this skill sits on top of the script rather
+than beside it.
+
+**And there is no scheduled job.** There was one — a GitHub Action that fetched, summarized
+and opened a PR — and it is gone. Nothing about this refreshes on a timer, nothing runs
+while nobody is looking, and the honest consequence is that **the layer is only as current
+as the last time somebody ran this.** That is the trade: a check a person runs is a check a
+person reads, and a PR nobody reviews is worse than a calendar reminder. Don't describe this
+as automated.

@@ -26,8 +26,10 @@ and two of them are wrong for our purposes.
 ## Where to look
 
 - `team/` — our charter, goals, roadmap, stakeholders, who owns what, how we run. Changes rarely.
-- `team/_generated/` — summaries of documents other teams own, written by the refresh
-  pipeline from `context-manifest.yaml`. **Never edit these; the source wins.**
+- `team/_generated/` — summaries of documents other teams own, written by `/refresh-index`
+  from `context-manifest.yaml` when somebody runs it. **Never edit these; the source wins.**
+  It is also the only folder generated content goes in; the discipline folders below are
+  written by the people who know that material.
 - `product/` — decisions we've made, the glossary (half of it other teams' terms), why
   the product is the way it is
 - `engineering/` — our service boundaries and the things you must not do

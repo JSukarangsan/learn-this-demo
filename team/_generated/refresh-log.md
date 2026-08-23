@@ -4,14 +4,18 @@
 nothing except the answer to *when did anyone last check this*, which is the only question
 it exists to answer.
 
-Two kinds of entry, both marked in their heading. **pipeline** is
-`.github/workflows/refresh-context.yml` writing down what it fetched. **/refresh-index**
-is a person checking the pointers themselves. They answer the same question from opposite
-ends — one proves the fetching still works, the other proves the addresses are still right
-— and a run of either without the other leaves half the layer unchecked.
+**One writer: `/refresh-index`, run by a person.** Nothing here refreshes on a timer.
+Entries dated before 2026-08-23 also carry `— pipeline` headings, from when a scheduled
+GitHub Action fetched and summarized alongside the skill. That workflow is gone — the
+checker it called still exists but writes nothing, so a run now produces one entry, written
+by the thing that also did the judging.
+
+The practical consequence is worth stating plainly: **this layer is only as current as the
+last entry below.** A date here is the real answer to *when did anyone last check this*,
+and if it is old, that is the finding.
 
 Entries are never edited after the fact. If a later run disagrees with an earlier one, that
-disagreement is the useful part.
+disagreement is the useful part — including where an earlier run was simply wrong.
 
 ---
 
