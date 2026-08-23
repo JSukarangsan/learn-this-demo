@@ -15,6 +15,68 @@ disagreement is the useful part.
 
 ---
 
+## 2026-08-23 — /refresh-index
+
+`h2_planning` came back `CHANGED` — 4338 → 4518 bytes, +4.1%,
+sha256 `45dfc6ba…` → `22a4748f…`. `cohort_calendar` unchanged, five entries skipped by
+design, no pointer failures.
+
+**Three things moved in the source. Two earned an edit and one deliberately didn't.**
+
+*Not written — a rewording that changes nothing.* The opening line went from *"We finished
+H1 with 12,400 active learners… Both numbers are up, and neither is as good as it looks"*
+to *"H1 closed with… Both are up, and neither is as good as it appears."* Same 12,400, same
+86%, same claim. The summary already says all of it and none of it is now wrong, so the
+body was left alone. **This is the case worth understanding:** the gate fires on any byte
+that moves, and a rewrite here would have produced a diff that looked like news. Roughly a
+third of upstream edits to a prose doc are this.
+
+*Written — a guardrail number moved.* `Around 40% of live attendance is mobile` → `55%`.
+One line in the summary, edited in place:
+
+```diff
+- - **320px.** ~40% of live attendance is mobile; a regression at the smallest width is
++ - **320px.** ~55% of live attendance is mobile; a regression at the smallest width is
+```
+
+*Written — a new "no" was added.* Live translation, declined for two enterprise accounts
+on latency grounds. Appended as a fifth bullet under *What we said no to*; the four
+existing bullets were not touched. An addition to a list is still a localized change, not
+a reorganization, so it does not earn a regenerate.
+
+Net: 2 content lines changed out of 83, plus the fingerprint and the two dates. The file
+was not regenerated.
+
+**Two knock-on findings, neither of them mine to fix.** The 40% figure is also written by
+hand in `design/CLAUDE.md` ("Around 40% of learners attend on a phone") and in
+`team/goals-and-okrs.md`. Both now disagree with the source and neither is a generated
+file, so they stay as they are until a person decides — the source wins, but not silently
+and not by me.
+
+More consequential: `team/roadmap-and-bets.md` says a native mobile app gets revisited
+"only if mobile attendance passes 60%." That number was 40% and is now 55%. The decision
+hasn't flipped, but the distance to it went from 20 points to 5, and nobody reading the
+roadmap would know unless someone tells them.
+
+Proposed edits (not applied):
+```diff
+  h2_planning:
+-   last_confirmed: 2026-08-05
++   last_confirmed: 2026-08-23
+```
+
+---
+
+## 2026-08-23 — pipeline
+
+`refresh-context.yml`. 7 checked — 2 unchanged, 0 changed, 0 missing, 5 skipped by design.
+
+Unchanged: `h2_planning`, `cohort_calendar`.
+
+Skipped by design: `product_backlog`, `team_chat`, `product_ui`, `cohort_scheduling_flow`, `vendor_video_sla`.
+
+Nothing moved. Every cached copy still matches its source.
+
 ## 2026-08-21 — /refresh-index (end-to-end test)
 
 Deliberate round-trip against the live H2 planning doc, to prove the one path the other
