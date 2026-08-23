@@ -171,6 +171,48 @@ sources:
       authoritative. Never summarize this one from upstream; there is no upstream to
       reach. /refresh-index should check the export's date, not the portal.
 
+  shared_product_terms:
+    canonical: "Instructor Tools' and Billing's own definitions of the terms we share —
+      held in their spaces, not ours"
+    type: cross_team
+    owner: "Instructor Tools (assignments, courses) · Billing (seats, entitlements)"
+    reachable: false
+    workaround: "Re-read both when a term stops matching what they mean, and reconcile
+      product/glossary.md. Ask in their channel; there is no single doc to link."
+    copy_of_record: product/glossary.md
+    refresh: quarterly
+    last_confirmed: 2026-08-05
+    notes: >
+      Half the terms in our glossary are not ours. "Seat" is Billing's word and they count
+      it differently on purpose; "assignment" belongs to Instructor Tools and we only
+      render it. Their definitions move without telling us, and the failure is quiet — our
+      glossary keeps looking authoritative while it is describing something that changed.
+      Deliberately NOT a summarize_to, and the reason is worth being clear about: the
+      glossary is not a summary of their definitions. It is our terms plus the thing a
+      pipeline cannot produce — what people on this team get wrong about each one. A
+      regeneration would overwrite that and we would not notice what we lost. A person
+      reconciles this; a job cannot.
+
+  external_metric_definitions:
+    canonical: "The Billing revenue reporting and the marketing dashboard — each carries
+      its own definition of numbers we also report"
+    type: cross_team
+    owner: "Billing (revenue reporting) · Growth (marketing dashboard)"
+    reachable: false
+    workaround: "Re-read both when either changes a definition, and update the arbitration
+      rules in insights/definitions.md. Nobody announces these changes."
+    copy_of_record: insights/definitions.md
+    refresh: quarterly
+    last_confirmed: 2026-08-05
+    notes: >
+      Three definitions of "active learner" exist and two of them are theirs. Our file does
+      not hold their numbers — it holds the rule for which one wins when they disagree, and
+      that rule is only correct as long as their definitions are what we last read.
+      Same reason as shared_product_terms for not being a summarize_to: the arbitration
+      rules and the "what a move signals" notes are this team's judgment, and no fetch
+      produces them. What goes stale here is not the copy, it is the assumption underneath
+      it — which is why this entry exists at all.
+
 # Where /weekly-digest-expanded writes, not reads from. Same addressing-layer rule
 # applies: an ID here, never a copy of what the doc currently says.
 outputs:
@@ -200,12 +242,17 @@ outputs:
 
 # Written here and nowhere else. No upstream to point at, because this repo is the
 # system of record for them.
+#
+# The test is whether a source exists, NOT whether we wrote the file. product/glossary.md
+# and insights/definitions.md were both on this list until 2026-08-23 and both were wrong:
+# somebody curated them, which felt like authorship, but the terms and the competing
+# definitions are owned by other teams. They are caches now — see shared_product_terms and
+# external_metric_definitions. Curating is what a refresh DOES; it is not evidence that
+# there is no upstream.
 local:
   - product/decisions/ # why scope is what it is. The backlog says what, not why.
-  - product/glossary.md
-  - engineering/constraints.md
-  - design/CLAUDE.md
-  - insights/definitions.md
+  - engineering/constraints.md # written from what bit us. No document upstream of a scar.
+  - design/CLAUDE.md # the judgment tokens.json can't hold
   - team/ownership.md
 
 # What a tool can actually reach from here today.

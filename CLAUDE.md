@@ -28,7 +28,8 @@ and two of them are wrong for our purposes.
 - `team/` — our charter, goals, roadmap, stakeholders, who owns what, how we run. Changes rarely.
 - `team/_generated/` — summaries of documents other teams own, written by the refresh
   pipeline from `context-manifest.yaml`. **Never edit these; the source wins.**
-- `product/` — decisions we've made, our glossary, why the product is the way it is
+- `product/` — decisions we've made, the glossary (half of it other teams' terms), why
+  the product is the way it is
 - `engineering/` — our service boundaries and the things you must not do
 - `design/` — tokens, plus the rules that aren't in the tokens
 - `insights/` — what our metrics actually mean. Read this before any number.

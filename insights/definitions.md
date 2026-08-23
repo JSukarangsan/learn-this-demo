@@ -3,6 +3,12 @@
 One entry per term. Every entry names the canonical source **and the rule for when
 sources disagree** — a glossary without an arbitration rule is a list of opinions.
 
+**The definitions we arbitrate against belong to other teams.** Billing's and Growth's
+each move on their own schedule and neither announces it, which means an arbitration rule
+here is only right for as long as their side is what we last read. Reconcile quarterly —
+see `external_metric_definitions` in `../context-manifest.yaml`. The rules and the *what a
+move signals* notes are ours; nothing upstream produces those.
+
 ## Active learner
 
 Canonical: enrolled in a cohort with a session in the next 14 days.
