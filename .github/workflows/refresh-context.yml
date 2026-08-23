@@ -1,29 +1,34 @@
-name: Refresh context
+name: Check context
 
-# Reads context-manifest.yaml, pulls each source that declares a summarize_to,
-# summarizes it, writes the result into team/_generated/ and opens a PR.
+# Reads context-manifest.yaml, fetches each source that declares a summarize_to, hashes
+# it, and compares that against the fingerprint in the generated file's banner. Opens a
+# PR when something actually moved.
+#
+# It does NOT summarize and does NOT write summary files. It answers one question —
+# did the source change — and leaves what to do about it to /refresh-index, which has a
+# model and doesn't need a credential to reach one. That is why there is no secret in
+# this workflow any more.
 #
 # A PR rather than a direct commit, on purpose. The pipeline proposes; a person
 # confirms. That is the same rule /refresh-index follows, and it is what keeps a
 # bad summary from quietly becoming the team's context.
 #
-# Every run also appends an entry to team/_generated/refresh-log.md, so the PR
-# carries the record of the run even when no summary moved.
+# Every run also appends an entry to team/_generated/refresh-log.md.
 
 on:
-  # The Monday cron is off on purpose. ANTHROPIC_API_KEY is deliberately NOT in this
-  # repo's secrets — it is public, and any collaborator who can push a workflow can read
-  # a secret out of one. So the summarize step runs locally, where the key stays in the
-  # operator's own environment, and this workflow is dispatch-only. See
-  # team/_generated/README.md → Running it. Re-enable the cron only alongside a
-  # credential that is safe to store here (a scoped key, or OIDC federation).
+  # The Monday cron is still off, but the reason it was off is gone. It was disabled
+  # because ANTHROPIC_API_KEY could not be stored here — this repo is public, and any
+  # collaborator who can push a workflow can read a secret out of one. This workflow no
+  # longer calls a model, so there is no secret to leak and nothing blocking a schedule.
+  # Turning it on is now just a decision about noise: a weekly run that finds nothing
+  # still opens a PR carrying its log entry. Decide that before uncommenting.
   #
   # schedule:
   #   - cron: '0 6 * * 1' # Mondays, 06:00 UTC — before the weekly update goes out
   workflow_dispatch:
     inputs:
       dry_run:
-        description: 'Fetch and report, but do not summarize, write or log'
+        description: 'Fetch and compare, but do not write the log'
         type: boolean
         default: false
 
@@ -32,7 +37,7 @@ permissions:
   pull-requests: write
 
 jobs:
-  refresh:
+  check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -41,31 +46,29 @@ jobs:
         with:
           node-version: '22'
 
-      # The script is the thing that decides what gets written into the repo, so it
+      # The script is the thing that decides what gets reported as drift, so it
       # runs against its own tests before it runs against the manifest.
       - name: Test
         run: node --test .github/scripts/*.test.mjs
 
-      - name: Resolve pointers and summarize
-        id: refresh
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      - name: Resolve pointers and compare fingerprints
+        id: check
         run: |
           node .github/scripts/refresh-context.mjs \
             ${{ inputs.dry_run && '--dry-run' || '' }} | tee refresh-report.txt
 
       # `!cancelled()` and not `success()`, deliberately. The step above exits non-zero
       # when any source failed, and a job that goes red is the right signal — but one
-      # unreachable source must not suppress the summaries that did refresh, or the log
-      # entry recording that the run happened. A run nobody hears about is the failure
-      # this whole pipeline exists to prevent.
+      # unreachable source must not suppress the findings for the sources that did
+      # resolve, or the log entry recording that the run happened. A run nobody hears
+      # about is the failure this whole pipeline exists to prevent.
       - name: Open a PR with what changed and the run log
-        if: ${{ !cancelled() && steps.refresh.outputs.changed == 'true' && !inputs.dry_run }}
+        if: ${{ !cancelled() && steps.check.outputs.changed == 'true' && !inputs.dry_run }}
         uses: peter-evans/create-pull-request@v6
         with:
           branch: context/refresh
-          title: 'Refresh generated context'
-          commit-message: 'chore: refresh generated context from manifest sources'
+          title: 'Context sources have drifted'
+          commit-message: 'chore: record context sources that drifted from their copies'
           body-path: refresh-report.txt
           delete-branch: true
           labels: context

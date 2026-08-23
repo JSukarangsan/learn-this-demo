@@ -1,9 +1,22 @@
-// Resolve every pointer in context-manifest.yaml that declares a `summarize_to`,
-// summarize what it finds, and write the result into the repo.
+// Resolve every pointer in context-manifest.yaml, and tell you which cached copies have
+// drifted from their sources.
 //
 // The whole point of the manifest is that this script knows nothing about Learn.this.
 // It reads the manifest and does what the manifest says. Adding a source is a manifest
 // edit, not a code change.
+//
+// THIS SCRIPT DOES NOT SUMMARIZE, AND DOES NOT WRITE SUMMARY FILES. It answers one
+// question per cached source — did the source change since the copy was generated — and
+// leaves the judgment about what to do with that to /refresh-index, which has a model and
+// doesn't need a credential to reach one. That split is why there is no ANTHROPIC_API_KEY
+// here: the only thing that ever needed it was the summarize call, and that call has moved
+// to the skill.
+//
+// The change signal is a content hash, not a timestamp, and that is not a preference. The
+// Google export endpoints these sources use return no Last-Modified, no ETag and no
+// Content-Length, so there is nothing to compare a date against — which is why every run
+// before this one reported UNKNOWN forever. The bodies are byte-stable, so a SHA-256 of
+// the body answers definitively what a date cannot.
 //
 // Deliberately skipped:
 //   - refresh: live        — pulled at query time, never cached
@@ -11,21 +24,25 @@
 //   - no summarize_to      — the source is read live or held by a person
 //
 // Every run appends an entry to team/_generated/refresh-log.md, including the runs that
-// refreshed nothing. That log is the only durable answer to "when did this last run",
-// and a run that found nothing is exactly the run nobody would otherwise notice.
+// found nothing. That log is the only durable answer to "when did this last run", and a
+// run that found nothing is exactly the run nobody would otherwise notice.
 //
 // Usage: node .github/scripts/refresh-context.mjs [--dry-run]
 
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs'
+import { createHash } from 'node:crypto'
 import { dirname } from 'node:path'
 
-const MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-5'
-const MAX_SUMMARY_TOKENS = 1400 // ~5k characters. Small on purpose — see below.
 const LOG_PATH = 'team/_generated/refresh-log.md'
 
 // `live` is the one `refresh:` value that means "there is no copy". Everything else is
 // a cadence, and a cadence on a source with nowhere to write is a mistake worth catching.
 const UNCACHED_REFRESH = 'live'
+
+// The fingerprint the generated file carries in its banner, and the only state this whole
+// mechanism keeps. It lives in the file it describes rather than a sidecar: nothing can
+// desync from it, and deleting a generated file correctly forces a regenerate.
+const FINGERPRINT = /Source fingerprint: sha256:([0-9a-f]{64}) \((\d+) bytes\)/
 
 // ---------------------------------------------------------------------------
 // A very small YAML reader. The manifest is a fixed, flat shape that we control,
@@ -95,46 +112,30 @@ export async function fetchSource(name, src) {
 }
 
 // ---------------------------------------------------------------------------
-// Summarize
+// Fingerprint
 // ---------------------------------------------------------------------------
-const PROMPT = `You are writing a context file that an AI coding agent will read before
-answering questions about this team's work. A person will also read it, but the agent is
-the primary audience.
+// Hashed over the decoded body, not the bytes on the wire, because that is what every
+// consumer actually sees. `fetch().text()` strips a UTF-8 BOM, and these Google exports
+// ship one — so hashing the raw response would fingerprint three bytes nobody reads and
+// disagree with this forever. The practical consequence: **a fingerprint must come from
+// this function.** `shasum` over a curl'd body computes something different and the gate
+// will report CHANGED on every run until someone works out why.
+export const sha256 = (text) => createHash('sha256').update(text, 'utf8').digest('hex')
 
-Summarize the source below. Rules:
+// Bytes, not `String.length`. They differ the moment the source contains an em-dash, and
+// a size labelled "bytes" that is really a character count is a small lie that makes a
+// diff impossible to reconcile against the file it describes.
+export const byteLength = (text) => Buffer.byteLength(text, 'utf8')
 
-- Under 5,000 characters. Shorter is better. A context file nobody finishes is worse than
-  one that omits something.
-- Keep every number, date, name, target and constraint. Those are the reason this file
-  exists. Drop the narrative around them.
-- Keep anything stated as a rule, a guardrail, or a decision — especially anything phrased
-  as what NOT to do, and the reasoning behind it.
-- Keep the caveats. "This number moves on cohort mix" is more useful than the number.
-- Do not add analysis, recommendations, or anything not in the source.
-- If the source contradicts itself, say so rather than resolving it.
-- Markdown. Start with a heading. No preamble.`
-
-export async function summarize(text, name) {
-  const key = process.env.ANTHROPIC_API_KEY
-  if (!key) throw new Error('ANTHROPIC_API_KEY is not set')
-  const base = process.env.ANTHROPIC_BASE_URL || 'https://api.anthropic.com'
-  const res = await fetch(`${base}/v1/messages`, {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      'x-api-key': key,
-      'anthropic-version': '2023-06-01',
-    },
-    body: JSON.stringify({
-      model: MODEL,
-      max_tokens: MAX_SUMMARY_TOKENS,
-      system: PROMPT,
-      messages: [{ role: 'user', content: `Source: ${name}\n\n${text.slice(0, 180_000)}` }],
-    }),
-  })
-  if (!res.ok) throw new Error(`anthropic ${res.status}: ${(await res.text()).slice(0, 300)}`)
-  const json = await res.json()
-  return json.content.map((b) => b.text || '').join('').trim()
+// Reads the fingerprint back out of a generated file's banner. Returns null when the file
+// doesn't exist (never generated) or carries no fingerprint (generated before this
+// mechanism existed) — both mean "can't compare", and both are handled the same way:
+// treat it as needing a look rather than guessing it's fine.
+export function readFingerprint(path, io = { readFileSync, existsSync }) {
+  if (!io.existsSync(path)) return null
+  const match = io.readFileSync(path, 'utf8').match(FINGERPRINT)
+  if (!match) return null
+  return { sha: match[1], bytes: Number(match[2]) }
 }
 
 // ---------------------------------------------------------------------------
@@ -166,42 +167,64 @@ disagreement is the useful part.
 ---
 `
 
-const pad = (s, n) => String(s).padEnd(n)
+const short = (sha) => sha.slice(0, 8)
 
-export function renderLogEntry({ today, done, skipped, failed, runUrl, dryRun }) {
-  const width = Math.max(
-    ...[...done, ...skipped, ...failed].map((r) => r.name.length),
-    4,
-  )
-  const rows = [
-    ...done.map((r) => `REFRESHED    ${pad(r.name, width)}  → ${r.file} (${r.in} chars in, ${r.out} out)`),
-    ...failed.map((r) => `FAILED       ${pad(r.name, width)}  ${r.why}`),
-    ...skipped.map((r) => `SKIPPED      ${pad(r.name, width)}  ${r.why}`),
-  ]
+const delta = (was, now) => {
+  const pct = was ? Math.round(((now - was) / was) * 1000) / 10 : 0
+  return `${was} → ${now} bytes (${pct >= 0 ? '+' : ''}${pct}%)`
+}
 
+// One block per source that did something; everything quiet collapses to a single line.
+// The log obeys the same rule as the summaries it tracks: don't write a paragraph to say
+// nothing happened.
+export function renderLogEntry({ today, unchanged, changed, missing, skipped, failed, runUrl, dryRun }) {
   const counts = [
-    `${done.length} refreshed`,
-    `${failed.length} failed`,
+    `${unchanged.length} unchanged`,
+    `${changed.length} changed`,
+    `${missing.length} missing`,
     `${skipped.length} skipped by design`,
+    ...(failed.length ? [`${failed.length} failed`] : []),
   ].join(', ')
+
+  const total = unchanged.length + changed.length + missing.length + skipped.length + failed.length
 
   const lines = [
     `## ${today} — pipeline${dryRun ? ' (dry run)' : ''}`,
     '',
-    `\`refresh-context.yml\`. ${counts}.${runUrl ? ` [Run log](${runUrl}).` : ''}`,
-    '',
-    '```',
-    ...(rows.length ? rows : ['No entry in the manifest declares a summarize_to.']),
-    '```',
+    `\`refresh-context.yml\`. ${total} checked — ${counts}.${runUrl ? ` [Run log](${runUrl}).` : ''}`,
   ]
 
-  if (failed.length) {
+  for (const r of failed) {
+    lines.push('', `**FAILED** — \`${r.name}\``, r.why)
+  }
+
+  for (const r of changed) {
     lines.push(
       '',
-      failed.length === 1
-        ? 'The failure above is the finding. Nothing else in this run needs reading.'
-        : 'The failures above are the finding. Nothing else in this run needs reading.',
+      `**CHANGED** — \`${r.name}\``,
+      `${delta(r.wasBytes, r.nowBytes)}. sha256 ${short(r.wasSha)}… → ${short(r.nowSha)}….`,
+      `\`${r.file}\` was generated from the older version — run \`/refresh-index\` to judge`,
+      'whether anything the summary asserts is now wrong.',
     )
+  }
+
+  for (const r of missing) {
+    lines.push(
+      '',
+      `**MISSING** — \`${r.name}\``,
+      `\`${r.file}\` ${r.why}. Nothing to compare against, so this needs a first pass from`,
+      `\`/refresh-index\`. Source is ${r.nowBytes} bytes, sha256 ${short(r.nowSha)}….`,
+    )
+  }
+
+  if (unchanged.length) {
+    lines.push('', `Unchanged: ${unchanged.map((r) => `\`${r.name}\``).join(', ')}.`)
+  }
+  if (skipped.length) {
+    lines.push('', `Skipped by design: ${skipped.map((r) => `\`${r.name}\``).join(', ')}.`)
+  }
+  if (!changed.length && !missing.length && !failed.length) {
+    lines.push('', 'Nothing moved. Every cached copy still matches its source.')
   }
 
   return lines.join('\n') + '\n'
@@ -226,10 +249,12 @@ export function appendToLog(entry, { path = LOG_PATH, io = { readFileSync, write
 // ---------------------------------------------------------------------------
 // Run
 // ---------------------------------------------------------------------------
-export async function refresh({ dryRun = false, manifestPath = 'context-manifest.yaml', today, logPath = LOG_PATH } = {}) {
+export async function check({ dryRun = false, manifestPath = 'context-manifest.yaml', today, logPath = LOG_PATH } = {}) {
   const sources = parseSources(readFileSync(manifestPath, 'utf8'))
   const date = today || new Date().toISOString().slice(0, 10)
-  const done = []
+  const unchanged = []
+  const changed = []
+  const missing = []
   const skipped = []
   const failed = []
 
@@ -249,14 +274,6 @@ export async function refresh({ dryRun = false, manifestPath = 'context-manifest
     }
   }
 
-  const targets = Object.entries(sources).filter(([, src]) => src.summarize_to && src.reachable !== false)
-
-  // One clear line beats the same missing secret reported once per source — and this is
-  // the failure that kept this pipeline from ever producing anything.
-  if (targets.length && !dryRun && !process.env.ANTHROPIC_API_KEY) {
-    failed.push({ name: 'ANTHROPIC_API_KEY', why: 'not set in the repo secrets, so nothing can be summarized.' })
-  }
-
   for (const [name, src] of Object.entries(sources)) {
     if (!src.summarize_to) {
       const why = src.copy_of_record
@@ -271,37 +288,50 @@ export async function refresh({ dryRun = false, manifestPath = 'context-manifest
       skipped.push({ name, why: 'reachable: false, and that is deliberate' })
       continue
     }
-    if (failed.some((f) => f.name === 'ANTHROPIC_API_KEY')) continue
     try {
       const raw = await fetchSource(name, src)
-      const summary = dryRun ? '(dry run — not summarized)' : await summarize(raw, name)
-      const file = `<!-- Generated from ${src.canonical}
-     by .github/workflows/refresh-context.yml on ${date}.
-     Do not edit this file. Edit the source, or the manifest entry that points at it. -->
+      const nowSha = sha256(raw)
+      const nowBytes = byteLength(raw)
+      const prior = readFingerprint(src.summarize_to)
 
-> **Generated file.** Summarized from the ${src.type.replace('_', ' ')} owned by
-> ${src.owner || 'unknown'}, on ${date}. Refresh cadence: ${src.refresh || 'unset'}.
-> The source is canonical; if this disagrees with it, this is wrong.
-
-${summary}
-`
-      if (!dryRun) {
-        mkdirSync(dirname(src.summarize_to), { recursive: true })
-        writeFileSync(src.summarize_to, file)
+      if (!prior) {
+        missing.push({
+          name,
+          file: src.summarize_to,
+          why: existsSync(src.summarize_to) ? 'carries no fingerprint' : 'does not exist',
+          nowSha,
+          nowBytes,
+        })
+      } else if (prior.sha === nowSha) {
+        // The whole point. Byte-identical source means the copy is definitionally still
+        // accurate, so nothing reads it, nothing summarizes it and nothing writes.
+        unchanged.push({ name, file: src.summarize_to, sha: nowSha, bytes: nowBytes })
+      } else {
+        changed.push({
+          name,
+          file: src.summarize_to,
+          wasSha: prior.sha,
+          nowSha,
+          wasBytes: prior.bytes,
+          nowBytes,
+        })
       }
-      done.push({ name, file: src.summarize_to, in: raw.length, out: summary.length })
     } catch (err) {
       failed.push({ name, why: err.message })
     }
   }
 
   const report = [
-    done.length
-      ? `Refreshed:\n  ${done.map((r) => `${r.name} → ${r.file} (${r.in} chars in, ${r.out} out)`).join('\n  ')}`
-      : 'Refreshed nothing.',
+    changed.length
+      ? `Changed:\n  ${changed.map((r) => `${r.name} — ${delta(r.wasBytes, r.nowBytes)} → ${r.file}`).join('\n  ')}`
+      : '',
+    missing.length
+      ? `\nMissing:\n  ${missing.map((r) => `${r.name} — ${r.file} ${r.why}`).join('\n  ')}`
+      : '',
+    unchanged.length ? `\nUnchanged:\n  ${unchanged.map((r) => r.name).join('\n  ')}` : '',
     skipped.length ? `\nSkipped, by design:\n  ${skipped.map((r) => `${r.name} — ${r.why}`).join('\n  ')}` : '',
     failed.length ? `\nFailed:\n  ${failed.map((r) => `${r.name} — ${r.why}`).join('\n  ')}` : '',
-  ].filter(Boolean).join('\n')
+  ].filter(Boolean).join('\n') || 'Nothing in the manifest declares a summarize_to.'
 
   // The run log is written even when the run failed outright, and especially then. A
   // pipeline that quietly does nothing for four months is the failure this repo exists
@@ -312,11 +342,11 @@ ${summary}
 
   let logged = false
   if (!dryRun) {
-    appendToLog(renderLogEntry({ today: date, done, skipped, failed, runUrl, dryRun }), { path: logPath })
+    appendToLog(renderLogEntry({ today: date, unchanged, changed, missing, skipped, failed, runUrl, dryRun }), { path: logPath })
     logged = true
   }
 
-  return { done, skipped, failed, report, logged }
+  return { unchanged, changed, missing, skipped, failed, report, logged }
 }
 
 // ---------------------------------------------------------------------------
@@ -325,21 +355,41 @@ ${summary}
 const invokedDirectly = process.argv[1] && process.argv[1].endsWith('refresh-context.mjs')
 
 if (invokedDirectly) {
+  // `--fingerprint` exists so nobody ever computes one by hand. The obvious move —
+  // `curl … | shasum -a 256` — produces a different digest than this script does (BOM,
+  // decoding), and a fingerprint written from it never matches, so the gate reports
+  // CHANGED forever and regenerates every run. That is precisely the churn this whole
+  // mechanism exists to prevent, so the only supported way to get one is to ask for it.
+  if (process.argv.includes('--fingerprint')) {
+    const sources = parseSources(readFileSync('context-manifest.yaml', 'utf8'))
+    for (const [name, src] of Object.entries(sources)) {
+      if (!src.summarize_to || src.reachable === false) continue
+      try {
+        const raw = await fetchSource(name, src)
+        console.log(`${name}\n  Source fingerprint: sha256:${sha256(raw)} (${byteLength(raw)} bytes)\n  → ${src.summarize_to}`)
+      } catch (err) {
+        console.log(`${name}\n  FAILED — ${err.message}`)
+      }
+    }
+    process.exit(0)
+  }
+
   const dryRun = process.argv.includes('--dry-run')
-  const { done, failed, report, logged } = await refresh({ dryRun })
+  const { changed, missing, failed, report, logged } = await check({ dryRun })
 
   console.log(report)
   if (logged) console.log(`\nLogged to ${LOG_PATH}.`)
 
   if (process.env.GITHUB_OUTPUT && existsSync(process.env.GITHUB_OUTPUT)) {
-    // Every real run appends to the log, so there is always something to propose. The
-    // PR carries the record of the run even when no summary moved — which is the run
-    // you most want a person to see.
-    writeFileSync(process.env.GITHUB_OUTPUT, `changed=${done.length > 0 || logged}\n`, { flag: 'a' })
+    // Only propose a PR when something actually moved. This used to be hardcoded true —
+    // every run opened a PR carrying nothing but its own log entry, which is the noise
+    // this whole change exists to stop.
+    const actionable = changed.length > 0 || missing.length > 0
+    writeFileSync(process.env.GITHUB_OUTPUT, `changed=${actionable}\n`, { flag: 'a' })
   }
   // A source that should be reachable and isn't is the thing worth being told about.
   // The exit code fails the step; it must not decide whether the PR opens, because the
-  // sources that did work are still worth proposing and the log entry is still worth
+  // sources that did resolve are still worth proposing and the log entry is still worth
   // keeping. The workflow gates the PR on `changed`, not on this.
   if (failed.length) process.exit(1)
 }

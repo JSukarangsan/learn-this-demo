@@ -15,6 +15,99 @@ disagreement is the useful part.
 
 ---
 
+## 2026-08-21 — /refresh-index (end-to-end test)
+
+Deliberate round-trip against the live H2 planning doc, to prove the one path the other
+checks couldn't reach: a real upstream change producing a proportional edit rather than a
+regenerated file.
+
+Changed `82% to 88%` → `82% to 90%` in the source doc, ran the gate, made the edit, then
+put the doc back. Three things worth keeping:
+
+**The size didn't change and the gate caught it anyway.** 4338 → 4338 bytes, +0%, because
+`88` and `90` are the same length. Every byte-count or content-length heuristic would have
+called that unchanged. Only the digest saw it. This is the case that justifies hashing over
+any cheaper comparison.
+
+**The edit was one line.** The source moved on exactly one line, and so did
+`team/_generated/h2-planning.md` — the `Enrollment completion` row, plus the fingerprint
+and the two dates that record when the body was written. A full regenerate would have
+reworded all 80 lines and buried a two-character change in the noise.
+
+**It is deterministic.** Reverting the doc returned the fingerprint to
+`sha256:45dfc6ba…`, bit for bit the value it held before the test. Same content, same
+hash, gate quiet again.
+
+Net change to this repo from the test: none. The doc is back at 88%, the summary is back to
+what it was, and `team/goals-and-okrs.md` — which carries the same target by hand and would
+have been left silently disagreeing — was never touched.
+
+## 2026-08-21 — /refresh-index
+
+**Mechanism change, not a content check.** Drift is now detected by hashing the source
+body, not by comparing dates. Every entry below this one reports `UNKNOWN` for
+`h2_planning` and `cohort_calendar` because those sources expose no `Last-Modified`, no
+`ETag` and no `Content-Length` — there was never a date to compare `last_confirmed`
+against, so `UNKNOWN` was the only state those two could ever reach. The bodies are
+byte-stable, so a SHA-256 answers what a timestamp couldn't. Both files now carry the
+fingerprint they were generated from, and the two pipeline entries below are the gate's
+first two real runs.
+
+**The first of those two is a false positive, and it stays in the log.** It reports
+`h2_planning` as `CHANGED`, 4341 → 4324 bytes. The document did not change. The
+fingerprint had been backfilled by hand with `curl … | shasum -a 256`, which computes
+something different from what the script does: these exports carry a UTF-8 BOM that
+`fetch().text()` strips and `curl` doesn't, and the byte count had been taken with
+`String.length`, which counts characters — 17 fewer than the real UTF-8 size, because the
+doc is full of em-dashes. A fingerprint that was never going to match reads exactly like a
+source that keeps changing.
+
+Fixed rather than papered over: sizes are now real byte lengths, and
+`refresh-context.mjs --fingerprint` prints the line to paste so nobody computes one by
+hand again. Both are covered by tests. Left in the log because the next person to see a
+source that "changes" every run needs to find this, and a corrected entry would have hidden
+the one worked example of it.
+
+Not re-run today: the phase-1 pointer checks against Jira, Slack and Figma. Nothing in this
+change touches them, and the 2026-08-20 entry below still stands — including
+`cohort_scheduling_flow`, which has now been `UNREACHABLE` for three consecutive runs and
+needs Ines rather than a fourth check.
+
+Proposed edits (not applied):
+```diff
+  h2_planning:
+-   last_confirmed: 2026-08-05
++   last_confirmed: 2026-08-21   # now genuinely checkable — fingerprint matches
+  cohort_calendar:
+-   last_confirmed: 2026-08-05
++   last_confirmed: 2026-08-21   # same
+```
+
+---
+
+## 2026-08-21 — pipeline
+
+`refresh-context.yml`. 7 checked — 2 unchanged, 0 changed, 0 missing, 5 skipped by design.
+
+Unchanged: `h2_planning`, `cohort_calendar`.
+
+Skipped by design: `product_backlog`, `team_chat`, `product_ui`, `cohort_scheduling_flow`, `vendor_video_sla`.
+
+Nothing moved. Every cached copy still matches its source.
+
+## 2026-08-21 — pipeline
+
+`refresh-context.yml`. 7 checked — 1 unchanged, 1 changed, 0 missing, 5 skipped by design.
+
+**CHANGED** — `h2_planning`
+4341 → 4324 bytes (-0.4%). sha256 292b7877… → 45dfc6ba….
+`team/_generated/h2-planning.md` was generated from the older version — run `/refresh-index` to judge
+whether anything the summary asserts is now wrong.
+
+Unchanged: `cohort_calendar`.
+
+Skipped by design: `product_backlog`, `team_chat`, `product_ui`, `cohort_scheduling_flow`, `vendor_video_sla`.
+
 ## 2026-08-20 — /refresh-index (regenerate)
 
 The pipeline run just above failed on the missing `ANTHROPIC_API_KEY` before it fetched

@@ -3,35 +3,41 @@
 **Nothing in this folder is hand-written, and nothing in it is canonical.**
 
 Every file here is a summary of a document owned somewhere else — the H2 planning doc and
-the ops cohort calendar. `.github/workflows/refresh-context.yml` reads
-`../../context-manifest.yaml`, fetches each source that declares a `summarize_to`, summarizes
-it, and writes the result here. Then it opens a PR.
+the ops cohort calendar. Two halves produce them, and the split is worth understanding
+before you run either.
+
+**`.github/scripts/refresh-context.mjs` decides whether anything needs doing.** It reads
+`../../context-manifest.yaml`, fetches each source that declares a `summarize_to`, hashes
+the body, and compares that against the fingerprint in the generated file's banner. It
+reports `UNCHANGED`, `CHANGED`, `MISSING` or `FAILED`, writes its own log entry, and opens
+a PR when something actually moved. **It cannot summarize and never writes a file here.**
+
+**`/refresh-index` does the part that needs judgment.** When the script says a source
+moved, the skill reads it, works out whether anything the summary asserts is now wrong,
+and writes the smallest change that makes the file true again — often one line, not a
+regenerated file.
 
 ## Running it
 
-**The refresh runs locally, not on a schedule.** This repository is public, and a GitHub
-Actions secret is readable by anyone who can push a workflow to it — so `ANTHROPIC_API_KEY`
-is deliberately not stored here and the Monday cron in
-`.github/workflows/refresh-context.yml` is commented out. The key lives in the operator's
-own environment instead:
-
 ```sh
-export ANTHROPIC_API_KEY=...          # your shell only — never committed, never a repo secret
-node .github/scripts/refresh-context.mjs --dry-run   # fetch and report, write nothing
-node .github/scripts/refresh-context.mjs             # write the summaries and the log entry
+node .github/scripts/refresh-context.mjs --dry-run     # compare, report, write nothing
+node .github/scripts/refresh-context.mjs               # compare and append the log entry
+node .github/scripts/refresh-context.mjs --fingerprint # print the banner line to paste
 ```
 
-The dry run is worth doing first: it resolves every pointer and fetches every source
-without spending a token, so a broken pointer surfaces before any summarizing happens. The
-real run rewrites the files in this folder and appends to `refresh-log.md`; commit the
-result as a PR the same way the workflow would have.
+**No credential, for either half.** The script doesn't call a model, and `/refresh-index`
+runs inside a session that already is one. `ANTHROPIC_API_KEY` used to be required and is
+now referenced nowhere.
 
-The workflow itself still exists and can be triggered by hand
-(`gh workflow run refresh-context.yml`), but with no key in the repo it will report
-`0 refreshed, 1 failed` and open a PR carrying only the log entry — which is the honest
-outcome, not a bug. Re-enabling the cron means first putting a credential here that is safe
-to store in a public repo: a scoped key with its own spend limit, or OIDC federation with
-no stored secret at all.
+**Never write a fingerprint by hand.** Use `--fingerprint`. `curl … | shasum -a 256`
+computes a different digest — these exports carry a UTF-8 BOM that `fetch().text()` strips
+— and a fingerprint that can't match makes the source look like it changes on every run.
+That has happened once here; see the 2026-08-21 entry in `refresh-log.md`.
+
+The Monday cron in `.github/workflows/refresh-context.yml` is still commented out, but the
+reason it was disabled is gone: it was off because a key couldn't be stored in a public
+repo, and there is no longer a key. What's left is a question about noise — a weekly run
+that finds nothing still opens a PR carrying its log entry. Decide that before uncommenting.
 
 ## Why summaries and not copies
 
@@ -41,7 +47,8 @@ irrelevant. Writing our own version by hand means maintaining a second copy of a
 don't own, and losing that race the first time the VP edits it.
 
 A summary regenerated from the source is disposable. If it's wrong, you don't fix it — you
-fix the prompt or the pointer and run it again.
+fix the pointer, or the rules in
+`.claude/skills/refresh-index/references/summary-format.md`, and run it again.
 
 ## The log
 
@@ -53,8 +60,13 @@ a person checks the pointers — and each entry says which.
 It is there because the pipeline's failure mode is silence. It was scheduled for Mondays and
 produced nothing for months; every pointer resolved, every source was real, and the missing
 `ANTHROPIC_API_KEY` meant the summarize step never executed. Nothing surfaced that, because
-a workflow that writes no files opens no PR. So the run now writes itself down first and the
-PR carries the entry whether or not a summary moved.
+a workflow that writes no files opens no PR. So every run writes itself down, including the
+runs that find nothing.
+
+**A PR now opens only when something actually moved** — `changed` used to be hardcoded true,
+which meant every run proposed a PR carrying nothing but its own log entry. That is the
+noise the fingerprint exists to stop, and it is the open question hanging over re-enabling
+the cron: a quiet scheduled run still writes a log entry that nothing then commits.
 
 ## Rules
 
