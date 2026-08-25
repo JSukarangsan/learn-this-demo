@@ -61,6 +61,43 @@ that names no file, and a `summarize_to` pointing outside `team/_generated/`.
 regenerate anything. A byte-identical source means the existing summary is definitionally
 still accurate. Reporting that in one line is a complete and good result.
 
+**`UNSTABLE` means the gate cannot work on that source.** Two fetches of the same unedited
+document disagreed, so any fingerprint written for it would mismatch on the next run and
+report `CHANGED` forever. Usually an export carrying a timestamp, or a search index
+normalising differently between reads. Don't write one. Say which source, and that it needs
+either a different address or a person on a cadence.
+
+### Sources only a connector can reach
+
+`check.mjs` is a plain Node script with no credentials and no MCP access. A source marked
+`fetch_via:` — Glean, or any other connector — is reported as **needing you** rather than
+skipped, along with the existing fingerprint to compare against.
+
+For each one: **retrieve the document through that connector yourself**, then compute its
+fingerprint the same way the gate will:
+
+```sh
+node .claude/skills/refresh-index/check.mjs --hash   # reads the content on stdin
+```
+
+Never hand-compute it, and never use `shasum` — see `references/summary-format.md` for why
+those disagree.
+
+**Then the important part, and say it in the log rather than burying it.** A connector
+returns *its index* of the document, not the document. Glean crawls on its own schedule, so
+a matching fingerprint proves only that **the index has not changed** — not that the source
+hasn't. A document edited an hour ago can look `UNCHANGED` because the crawler has not
+caught up yet.
+
+That is a genuinely weaker guarantee than a direct fetch, and it fails in the dangerous
+direction: it says the copy is current when it may not be. Two consequences worth carrying:
+
+- **Never report a `fetch_via` source as confirmed-current without the caveat.** "Unchanged
+  as far as the index knows" is the honest phrasing.
+- **Anything a team ships against — a compliance rule, a legal constraint, a hard number —
+  gets checked against the real document by a person**, not against the index and not by
+  this skill.
+
 Hashing is the mechanism because **dating is impossible here** — these sources expose no
 `Last-Modified`, no `ETag` and no `Content-Length`. That's why every run before this one
 reported `UNKNOWN` forever, and why a confident `CONFIRMED` on a source you can't date was

@@ -27,10 +27,27 @@
 //   - reachable: false     — there is nothing to fetch, by design
 //   - no summarize_to      — the source is read live or held by a person
 //
-// Usage: node .github/scripts/check.mjs [--fingerprint]
+// Usage: node .claude/skills/refresh-index/check.mjs [--fingerprint | --hash]
+//        ... | node check.mjs --hash   computes the banner line for content on stdin
+//
+// ── WHERE THIS FILE COMES FROM ───────────────────────────────────────────────
+// CANONICAL COPY:
+//   nyt-context-cohort/.claude/skills/stand-up-your-repo/templates/refresh-index/check.mjs
+//
+// That is the copy that ships to every new team, so it is the original and this is an
+// installed instance of it. Fix bugs there, then re-sync here:
+//
+//   cp <cohort-repo>/.claude/skills/stand-up-your-repo/templates/refresh-index/check.mjs \
+//      .claude/skills/refresh-index/check.mjs
+//
+// check.test.mjs has a test that fails if the two have drifted, when both repos happen to
+// be checked out side by side. It skips cleanly when they aren't. Editing this file
+// directly is how a fix reaches the demo and never reaches anybody else.
+// ─────────────────────────────────────────────────────────────────────────────
 
 import { readFileSync, existsSync } from 'node:fs'
 import { createHash } from 'node:crypto'
+import { join, dirname, resolve } from 'node:path'
 
 // `live` is the one `refresh:` value that means "there is no copy". Everything else is
 // a cadence, and a cadence on a source with nowhere to write is a mistake worth catching.
@@ -95,6 +112,30 @@ export function parseSources(yaml) {
     }
   }
   return sources
+}
+
+// ---------------------------------------------------------------------------
+// Finding the manifest
+//
+// Walk up from the working directory rather than demanding the repo root. Running this
+// from a subdirectory used to throw a bare ENOENT naming a relative path, which tells a
+// first-time reader nothing about what went wrong. Paths inside the manifest resolve
+// against the manifest's own directory, not the shell's — otherwise `summarize_to` would
+// mean something different depending on where you stood when you ran it.
+// ---------------------------------------------------------------------------
+export function findManifest(start = process.cwd()) {
+  let dir = resolve(start)
+  for (;;) {
+    const candidate = join(dir, 'context-manifest.yaml')
+    if (existsSync(candidate)) return candidate
+    const up = dirname(dir)
+    if (up === dir) break
+    dir = up
+  }
+  throw new Error(
+    `no context-manifest.yaml in ${resolve(start)} or any directory above it. ` +
+    'This has to run inside a repo that has one.',
+  )
 }
 
 // ---------------------------------------------------------------------------
@@ -163,14 +204,19 @@ export function overdueBy(refresh, lastConfirmed, today) {
 // ---------------------------------------------------------------------------
 // Run
 // ---------------------------------------------------------------------------
-export async function check({ manifestPath = 'context-manifest.yaml', today } = {}) {
-  const sources = parseSources(readFileSync(manifestPath, 'utf8'))
+export async function check({ manifestPath, today } = {}) {
+  const manifest = manifestPath ? resolve(manifestPath) : findManifest()
+  const root = dirname(manifest)
+  const at = (p) => resolve(root, p) // manifest-relative, never cwd-relative
+  const sources = parseSources(readFileSync(manifest, 'utf8'))
   const date = today || new Date().toISOString().slice(0, 10)
   const unchanged = []
   const changed = []
   const missing = []
   const skipped = []
   const overdue = []
+  const unstable = []
+  const manual = []
   const failed = []
 
   // The manifest's one rule, made executable. An entry either names a file in this repo
@@ -212,7 +258,7 @@ export async function check({ manifestPath = 'context-manifest.yaml', today } = 
             refresh: src.refresh,
             lastConfirmed: src.last_confirmed,
             ...late,
-            exists: existsSync(src.copy_of_record),
+            exists: existsSync(at(src.copy_of_record)),
           })
           continue
         }
@@ -229,17 +275,48 @@ export async function check({ manifestPath = 'context-manifest.yaml', today } = 
       skipped.push({ name, why: 'reachable: false, and that is deliberate' })
       continue
     }
+    // A source reachable only through a connector — Glean, an MCP server, anything
+    // needing credentials this script does not have. It cannot be fetched here, and
+    // saying so is the point: skipping it silently would let a cached copy sit
+    // unchecked forever while the report looked clean.
+    if (src.fetch_via) {
+      manual.push({
+        name,
+        file: src.summarize_to,
+        via: src.fetch_via,
+        prior: readFingerprint(at(src.summarize_to)),
+      })
+      continue
+    }
     try {
       const raw = await fetchSource(name, src)
       const nowSha = sha256(raw)
       const nowBytes = byteLength(raw)
-      const prior = readFingerprint(src.summarize_to)
+      const prior = readFingerprint(at(src.summarize_to))
 
       if (!prior) {
+        // No fingerprint yet, so one is about to be written — and a fingerprint is only
+        // worth writing if the source is byte-stable. Fetch a second time and compare.
+        // A source that returns different bytes for the same content (an export carrying
+        // a timestamp, a search index normalising differently between calls) will report
+        // CHANGED on every future run, and somebody will spend a week working out why.
+        // One extra request, once per source, converts that into a message today.
+        const second = await fetchSource(name, src)
+        if (sha256(second) !== nowSha) {
+          unstable.push({
+            name,
+            file: src.summarize_to,
+            first: nowSha,
+            second: sha256(second),
+            firstBytes: nowBytes,
+            secondBytes: byteLength(second),
+          })
+          continue
+        }
         missing.push({
           name,
           file: src.summarize_to,
-          why: existsSync(src.summarize_to) ? 'carries no fingerprint' : 'does not exist',
+          why: existsSync(at(src.summarize_to)) ? 'carries no fingerprint' : 'does not exist',
           nowSha,
           nowBytes,
         })
@@ -270,6 +347,12 @@ export async function check({ manifestPath = 'context-manifest.yaml', today } = 
     missing.length
       ? `\nMissing:\n  ${missing.map((r) => `${r.name} — ${r.file} ${r.why}. Source is ${r.nowBytes} bytes, sha256 ${r.nowSha.slice(0, 8)}…`).join('\n  ')}`
       : '',
+    manual.length
+      ? `Needs the skill to fetch it:\n  ${manual.map((r) => `${r.name} — reachable only via ${r.via}, which this script cannot call. ${r.prior ? `Existing fingerprint sha256 ${r.prior.sha.slice(0,8)}… — compare against it.` : 'No fingerprint yet — first pass.'} → ${r.file}`).join('\n  ')}`
+      : '',
+    unstable.length
+      ? `Unstable:\n  ${unstable.map((r) => `${r.name} — two fetches disagreed (${r.firstBytes} vs ${r.secondBytes} bytes, ${r.first.slice(0,8)}… vs ${r.second.slice(0,8)}…). No fingerprint written; this source cannot be checked by hash.`).join('\n  ')}`
+      : '',
     overdue.length
       ? `\nOverdue:\n  ${overdue.map((r) => `${r.name} — ${r.file} was due ${r.refresh}, last confirmed ${r.lastConfirmed} (${r.days} days ago)${r.exists ? '' : ', and the file is missing entirely'}`).join('\n  ')}`
       : '',
@@ -278,7 +361,7 @@ export async function check({ manifestPath = 'context-manifest.yaml', today } = 
     failed.length ? `\nFailed:\n  ${failed.map((r) => `${r.name} — ${r.why}`).join('\n  ')}` : '',
   ].filter(Boolean).join('\n') || 'Nothing in the manifest declares a summarize_to.'
 
-  return { unchanged, changed, missing, skipped, overdue, failed, report }
+  return { unchanged, changed, missing, skipped, overdue, unstable, manual, failed, report }
 }
 
 // ---------------------------------------------------------------------------
@@ -292,8 +375,25 @@ if (invokedDirectly) {
   // decoding), and a fingerprint written from it never matches, so the gate reports
   // CHANGED forever and regenerates every run. That is precisely the churn this whole
   // mechanism exists to prevent, so the only supported way to get one is to ask for it.
+  // The agent fetched something itself (over Glean, an MCP server, anywhere this script
+  // cannot reach) and needs the banner line for it. Piping through here guarantees the
+  // digest is computed exactly the way the gate will later recompute it.
+  if (process.argv.includes('--hash')) {
+    const chunks = []
+    for await (const c of process.stdin) chunks.push(c)
+    const text = Buffer.concat(chunks).toString('utf8').replace(/^\uFEFF/, '')
+    console.log(`Source fingerprint: sha256:${sha256(text)} (${byteLength(text)} bytes)`)
+    process.exit(0)
+  }
+
   if (process.argv.includes('--fingerprint')) {
-    const sources = parseSources(readFileSync('context-manifest.yaml', 'utf8'))
+    let sources
+    try {
+      sources = parseSources(readFileSync(findManifest(), 'utf8'))
+    } catch (err) {
+      console.error(err.message)
+      process.exit(2)
+    }
     for (const [name, src] of Object.entries(sources)) {
       if (!src.summarize_to || src.reachable === false) continue
       try {
@@ -306,8 +406,18 @@ if (invokedDirectly) {
     process.exit(0)
   }
 
-  const { failed, report } = await check()
+  let result
+  try {
+    result = await check()
+  } catch (err) {
+    // A missing manifest is the most likely way this is invoked wrongly, and a raw stack
+    // trace teaches nobody anything. Print the sentence and stop.
+    console.error(err.message)
+    process.exit(2)
+  }
+  const { failed, unstable, report } = result
   console.log(report)
-  // A source that should be reachable and isn't is the thing worth being told about.
-  if (failed.length) process.exit(1)
+  // A source that should be reachable and isn't, or that cannot be fingerprinted at all,
+  // is the thing worth being told about.
+  if (failed.length || unstable.length) process.exit(1)
 }

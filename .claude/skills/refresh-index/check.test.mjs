@@ -20,7 +20,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync } from 
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import { parseSources, check, sha256, byteLength, readFingerprint, overdueBy } from './check.mjs'
+import { parseSources, check, sha256, byteLength, readFingerprint, overdueBy, findManifest } from './check.mjs'
 
 // A manifest shaped like the real one — one cached source, one live pointer, one
 // deliberately unreachable, one with a hand-maintained copy. Every skip rule, once.
@@ -193,6 +193,123 @@ describe('generated summaries stay inside team/_generated/', () => {
     writeFileSync(join(dir, 'context-manifest.yaml'), manifest('https://127.0.0.1:1/unused'))
     const { failed } = await check({ today: '2026-08-19' })
     assert.equal(failed.some((f) => /outside/.test(f.why)), false)
+  })
+})
+
+describe('finding the manifest from wherever you happen to be', () => {
+  let root
+
+  before(() => {
+    root = mkdtempSync(join(tmpdir(), 'refresh-find-'))
+    mkdirSync(join(root, 'a/b/c'), { recursive: true })
+    writeFileSync(join(root, 'context-manifest.yaml'), manifest('https://127.0.0.1:1/x'))
+  })
+
+  test('walks up from a subdirectory', () => {
+    assert.equal(findManifest(join(root, 'a/b/c')), join(root, 'context-manifest.yaml'))
+  })
+
+  test('finds it in the directory itself', () => {
+    assert.equal(findManifest(root), join(root, 'context-manifest.yaml'))
+  })
+
+  test('says what it looked for when there is none', () => {
+    // The old behaviour was a bare ENOENT naming a relative path, which tells a
+    // first-time reader nothing. The message has to name the directory it started from.
+    const orphan = mkdtempSync(join(tmpdir(), 'refresh-orphan-'))
+    assert.throws(() => findManifest(orphan), (err) => {
+      assert.match(err.message, /no context-manifest\.yaml/)
+      assert.match(err.message, /or any directory above it/)
+      return true
+    })
+  })
+})
+
+describe('a source that will not hash the same twice is caught before it churns', () => {
+  let server, url, dir, flip
+
+  before(async () => {
+    flip = 0
+    server = createServer((req, res) => {
+      res.writeHead(200, { 'content-type': 'text/plain' })
+      // /wobbly returns something different on every call — an export carrying a
+      // timestamp, or a search index normalising differently between reads.
+      if (req.url === '/wobbly') return res.end(`${DOC_BODY} [generated ${flip++}]`)
+      res.end(DOC_BODY)
+    })
+    await new Promise((r) => server.listen(0, '127.0.0.1', r))
+    url = `http://127.0.0.1:${server.address().port}`
+  })
+
+  after(() => server.close())
+
+  test('two disagreeing fetches mean no fingerprint gets written', async () => {
+    // Writing one would make every future run report CHANGED, forever, for a source
+    // nobody actually edited — the exact churn this whole mechanism exists to prevent.
+    dir = mkdtempSync(join(tmpdir(), 'refresh-wobble-'))
+    mkdirSync(join(dir, 'team/_generated'), { recursive: true })
+    writeFileSync(join(dir, 'context-manifest.yaml'), manifest(`${url}/wobbly`))
+
+    const { unstable, missing } = await check({ manifestPath: join(dir, 'context-manifest.yaml'), today: '2026-08-19' })
+
+    assert.equal(unstable.length, 1, 'the source must be reported as unfingerprintable')
+    assert.equal(unstable[0].name, 'h2_planning')
+    assert.notEqual(unstable[0].first, unstable[0].second)
+    assert.equal(missing.length, 0, 'and it must NOT fall through to a normal first write')
+  })
+
+  test('a stable source is unaffected', async () => {
+    dir = mkdtempSync(join(tmpdir(), 'refresh-stable-'))
+    mkdirSync(join(dir, 'team/_generated'), { recursive: true })
+    writeFileSync(join(dir, 'context-manifest.yaml'), manifest(`${url}/steady`))
+
+    const { unstable, missing } = await check({ manifestPath: join(dir, 'context-manifest.yaml'), today: '2026-08-19' })
+
+    assert.equal(unstable.length, 0)
+    assert.equal(missing.length, 1)
+  })
+})
+
+describe('a source only a connector can reach', () => {
+  let dir
+
+  before(() => {
+    dir = mkdtempSync(join(tmpdir(), 'refresh-via-'))
+    mkdirSync(join(dir, 'team/_generated'), { recursive: true })
+  })
+
+  test('fetch_via is reported as needing the skill, never skipped quietly', async () => {
+    // This script cannot call an MCP server. Skipping such a source silently would let a
+    // cached copy sit unchecked indefinitely while the report looked clean — which is the
+    // exact silent failure the whole mechanism exists to prevent. It has to say so.
+    writeFileSync(
+      join(dir, 'context-manifest.yaml'),
+      manifest('https://127.0.0.1:1/unused').replace(
+        '    fetch: "https://127.0.0.1:1/unused"',
+        '    fetch_via: glean',
+      ),
+    )
+    const { manual, skipped, unchanged } = await check({
+      manifestPath: join(dir, 'context-manifest.yaml'), today: '2026-08-19',
+    })
+
+    assert.equal(manual.length, 1)
+    assert.equal(manual[0].name, 'h2_planning')
+    assert.equal(manual[0].via, 'glean')
+    assert.equal(manual[0].prior, null, 'no fingerprint yet, so the skill does a first pass')
+    assert.equal(unchanged.length, 0, 'it must never be reported as up to date')
+    assert.equal(skipped.some((s) => s.name === 'h2_planning'), false)
+  })
+
+  test('an existing fingerprint is handed to the skill to compare against', async () => {
+    writeFileSync(
+      join(dir, 'team/_generated/h2-planning.md'),
+      generated(sha256(DOC_BODY), byteLength(DOC_BODY)),
+    )
+    const { manual } = await check({
+      manifestPath: join(dir, 'context-manifest.yaml'), today: '2026-08-19',
+    })
+    assert.equal(manual[0].prior.sha, sha256(DOC_BODY))
   })
 })
 
@@ -387,6 +504,35 @@ describe('a real run, against a real server', () => {
       existsSync(join(d, 'team/_generated/refresh-log.md')),
       false,
       'the checker does not write the log — the skill does',
+    )
+  })
+})
+
+describe('the shipped template and this copy have not drifted', () => {
+  // Three copies of this skill exist: the canonical one inside stand-up-your-repo's
+  // templates (what ships to every new team), this installed instance, and whatever each
+  // team ends up with. Nothing keeps them identical, so a bug fixed in one silently
+  // persists in the others. This makes that loud — but only when both repos happen to be
+  // checked out next to each other, so it never fails for someone who has only one.
+  const template = join(
+    import.meta.dirname, '../../../../nyt-context-cohort',
+    '.claude/skills/stand-up-your-repo/templates/refresh-index',
+  )
+  const available = existsSync(template)
+
+  test('check.mjs is byte-identical to the canonical copy', { skip: !available && 'cohort repo not checked out alongside' }, () => {
+    assert.equal(
+      readFileSync(join(import.meta.dirname, 'check.mjs'), 'utf8'),
+      readFileSync(join(template, 'check.mjs'), 'utf8'),
+      'check.mjs has drifted from the template that ships. Re-sync — see the header comment.',
+    )
+  })
+
+  test('check.test.mjs is byte-identical to the canonical copy', { skip: !available && 'cohort repo not checked out alongside' }, () => {
+    assert.equal(
+      readFileSync(join(import.meta.dirname, 'check.test.mjs'), 'utf8'),
+      readFileSync(join(template, 'check.test.mjs'), 'utf8'),
+      'check.test.mjs has drifted from the template that ships. Re-sync — see the header comment.',
     )
   })
 })
