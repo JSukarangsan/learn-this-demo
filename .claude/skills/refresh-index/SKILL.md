@@ -110,8 +110,10 @@ usually mentioned:
    fresh edit while still serving the previous crawl's text — a `CHANGED` signal pointing
    at stale content to summarize.
 
-**Neither gap has been measured**, and neither is visible from a single read. Treat the
-size of both as unknown until somebody times them.
+**Neither gap is visible from a single read, and neither has a published number.** Do not
+quote one, do not estimate one, and do not let a run imply the lag is small. It varies by
+source, by connector load, and by document type. The honest statement is that a connector's
+answer is behind the document by an unknown amount.
 
 So: **`fetch_via` is a weaker class of check, not an equivalent one.** It fails in the
 dangerous direction — saying a copy is current when it may not be. Three consequences:
@@ -120,7 +122,9 @@ dangerous direction — saying a copy is current when it may not be. Three conse
   index knows, source last modified {date}" is the honest phrasing, and the difference
   matters.
 - **Anything a team ships against — a compliance rule, a legal constraint, a hard number —
-  gets checked against the real document by a person.**
+  gets checked against the real document by a person.** Where no connector reaches the
+  source directly, which at NYT is every Google document, **that person is the only ground
+  truth that exists.** Say so plainly rather than implying the check covered it.
 - **If the date moved, re-read before summarizing, and say if the body looks inconsistent
   with it.** A fresh date over apparently unchanged text is gap 2 showing itself, and it is
   worth writing down rather than shrugging at.
