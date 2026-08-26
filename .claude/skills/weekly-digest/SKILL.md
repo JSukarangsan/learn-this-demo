@@ -5,7 +5,7 @@ description: Assemble the weekly digest for ONE project from the context layer a
 
 # Weekly digest
 
-Assemble the update. Don't send it.
+Assemble the update, save the record, and post it to Slack.
 
 The information already exists. It's just scattered — a few folders in this repo and a
 tracker outside it. Writing the update takes an hour because of the archaeology, not
@@ -111,13 +111,24 @@ we know about the tracker, it knows nothing about us.
 ## Then write it
 
 Format, section order, and voice are in **`references/digest-format.md`**. Read it before
-writing a line. Then run `/copy` so the result lands on the clipboard in a shape that
-pastes cleanly into Slack.
+writing a line.
 
-**Save the share to `projects/<project>/comms/<week-ending>-status.md`** — same content,
-before any hand-editing. One project, one file; there is no squad-level `comms/`. That file
-is a record of what the team was told and when, which is the only thing it's good for — it
-is never a source for a later digest. See `projects/CLAUDE.md`.
+**Write to two places, from the same run, in this order:**
+
+1. **`projects/<project>/comms/<week-ending>-status.md`** — same content, before any
+   hand-editing. One project, one file; there is no squad-level `comms/`. That file is a
+   record of what the team was told and when, which is the only thing it's good for — it
+   is never a source for a later digest. See `projects/CLAUDE.md`.
+2. **`#webapp`** — `context-manifest.yaml` → `sources.team_chat`. Post the same content,
+   converted to Slack markdown per *Posting to Slack* in `references/digest-format.md`.
+   This is a real post (`chat:write`), not a copy to the clipboard — check that Slack
+   access is actually reachable for this skill in `context-manifest.yaml` →
+   `available_connections` before relying on it; if it isn't, say so and stop rather than
+   silently only writing the status file.
+
+If the Slack post fails after the status file saved successfully, say so in the chat
+response rather than reporting the run as fully done — a digest that's saved but never
+reached the team is a partial run, not a finished one.
 
 ## Stop and ask a human when
 

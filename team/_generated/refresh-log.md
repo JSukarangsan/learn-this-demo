@@ -4,14 +4,364 @@
 nothing except the answer to *when did anyone last check this*, which is the only question
 it exists to answer.
 
-Two kinds of entry, both marked in their heading. **pipeline** is
-`.github/workflows/refresh-context.yml` writing down what it fetched. **/refresh-index**
-is a person checking the pointers themselves. They answer the same question from opposite
-ends — one proves the fetching still works, the other proves the addresses are still right
-— and a run of either without the other leaves half the layer unchecked.
+**One writer: `/refresh-index`, run by a person.** Nothing here refreshes on a timer.
+Entries dated before 2026-08-23 also carry `— pipeline` headings, from when a scheduled
+GitHub Action fetched and summarized alongside the skill. That workflow is gone — the
+checker it called still exists but writes nothing, so a run now produces one entry, written
+by the thing that also did the judging.
+
+The practical consequence is worth stating plainly: **this layer is only as current as the
+last entry below.** A date here is the real answer to *when did anyone last check this*,
+and if it is old, that is the finding.
 
 Entries are never edited after the fact. If a later run disagrees with an earlier one, that
-disagreement is the useful part.
+disagreement is the useful part — including where an earlier run was simply wrong.
+
+---
+
+## 2026-08-23 — /refresh-index
+
+`h2_planning` came back `CHANGED` — 4338 → 4518 bytes, +4.1%,
+sha256 `45dfc6ba…` → `22a4748f…`. `cohort_calendar` unchanged, five entries skipped by
+design, no pointer failures.
+
+**Three things moved in the source. Two earned an edit and one deliberately didn't.**
+
+*Not written — a rewording that changes nothing.* The opening line went from *"We finished
+H1 with 12,400 active learners… Both numbers are up, and neither is as good as it looks"*
+to *"H1 closed with… Both are up, and neither is as good as it appears."* Same 12,400, same
+86%, same claim. The summary already says all of it and none of it is now wrong, so the
+body was left alone. **This is the case worth understanding:** the gate fires on any byte
+that moves, and a rewrite here would have produced a diff that looked like news. Roughly a
+third of upstream edits to a prose doc are this.
+
+*Written — a guardrail number moved.* `Around 40% of live attendance is mobile` → `55%`.
+One line in the summary, edited in place:
+
+```diff
+- - **320px.** ~40% of live attendance is mobile; a regression at the smallest width is
++ - **320px.** ~55% of live attendance is mobile; a regression at the smallest width is
+```
+
+*Written — a new "no" was added.* Live translation, declined for two enterprise accounts
+on latency grounds. Appended as a fifth bullet under *What we said no to*; the four
+existing bullets were not touched. An addition to a list is still a localized change, not
+a reorganization, so it does not earn a regenerate.
+
+Net: 2 content lines changed out of 83, plus the fingerprint and the two dates. The file
+was not regenerated.
+
+**Two knock-on findings, neither of them mine to fix.** The 40% figure is also written by
+hand in `design/CLAUDE.md` ("Around 40% of learners attend on a phone") and in
+`team/goals-and-okrs.md`. Both now disagree with the source and neither is a generated
+file, so they stay as they are until a person decides — the source wins, but not silently
+and not by me.
+
+More consequential: `team/roadmap-and-bets.md` says a native mobile app gets revisited
+"only if mobile attendance passes 60%." That number was 40% and is now 55%. The decision
+hasn't flipped, but the distance to it went from 20 points to 5, and nobody reading the
+roadmap would know unless someone tells them.
+
+Proposed edits (not applied):
+```diff
+  h2_planning:
+-   last_confirmed: 2026-08-05
++   last_confirmed: 2026-08-23
+```
+
+---
+
+## 2026-08-23 — pipeline
+
+`refresh-context.yml`. 7 checked — 2 unchanged, 0 changed, 0 missing, 5 skipped by design.
+
+Unchanged: `h2_planning`, `cohort_calendar`.
+
+Skipped by design: `product_backlog`, `team_chat`, `product_ui`, `cohort_scheduling_flow`, `vendor_video_sla`.
+
+Nothing moved. Every cached copy still matches its source.
+
+## 2026-08-21 — /refresh-index (end-to-end test)
+
+Deliberate round-trip against the live H2 planning doc, to prove the one path the other
+checks couldn't reach: a real upstream change producing a proportional edit rather than a
+regenerated file.
+
+Changed `82% to 88%` → `82% to 90%` in the source doc, ran the gate, made the edit, then
+put the doc back. Three things worth keeping:
+
+**The size didn't change and the gate caught it anyway.** 4338 → 4338 bytes, +0%, because
+`88` and `90` are the same length. Every byte-count or content-length heuristic would have
+called that unchanged. Only the digest saw it. This is the case that justifies hashing over
+any cheaper comparison.
+
+**The edit was one line.** The source moved on exactly one line, and so did
+`team/_generated/h2-planning.md` — the `Enrollment completion` row, plus the fingerprint
+and the two dates that record when the body was written. A full regenerate would have
+reworded all 80 lines and buried a two-character change in the noise.
+
+**It is deterministic.** Reverting the doc returned the fingerprint to
+`sha256:45dfc6ba…`, bit for bit the value it held before the test. Same content, same
+hash, gate quiet again.
+
+Net change to this repo from the test: none. The doc is back at 88%, the summary is back to
+what it was, and `team/goals-and-okrs.md` — which carries the same target by hand and would
+have been left silently disagreeing — was never touched.
+
+## 2026-08-21 — /refresh-index
+
+**Mechanism change, not a content check.** Drift is now detected by hashing the source
+body, not by comparing dates. Every entry below this one reports `UNKNOWN` for
+`h2_planning` and `cohort_calendar` because those sources expose no `Last-Modified`, no
+`ETag` and no `Content-Length` — there was never a date to compare `last_confirmed`
+against, so `UNKNOWN` was the only state those two could ever reach. The bodies are
+byte-stable, so a SHA-256 answers what a timestamp couldn't. Both files now carry the
+fingerprint they were generated from, and the two pipeline entries below are the gate's
+first two real runs.
+
+**The first of those two is a false positive, and it stays in the log.** It reports
+`h2_planning` as `CHANGED`, 4341 → 4324 bytes. The document did not change. The
+fingerprint had been backfilled by hand with `curl … | shasum -a 256`, which computes
+something different from what the script does: these exports carry a UTF-8 BOM that
+`fetch().text()` strips and `curl` doesn't, and the byte count had been taken with
+`String.length`, which counts characters — 17 fewer than the real UTF-8 size, because the
+doc is full of em-dashes. A fingerprint that was never going to match reads exactly like a
+source that keeps changing.
+
+Fixed rather than papered over: sizes are now real byte lengths, and
+`refresh-context.mjs --fingerprint` prints the line to paste so nobody computes one by
+hand again. Both are covered by tests. Left in the log because the next person to see a
+source that "changes" every run needs to find this, and a corrected entry would have hidden
+the one worked example of it.
+
+Not re-run today: the phase-1 pointer checks against Jira, Slack and Figma. Nothing in this
+change touches them, and the 2026-08-20 entry below still stands — including
+`cohort_scheduling_flow`, which has now been `UNREACHABLE` for three consecutive runs and
+needs Ines rather than a fourth check.
+
+Proposed edits (not applied):
+```diff
+  h2_planning:
+-   last_confirmed: 2026-08-05
++   last_confirmed: 2026-08-21   # now genuinely checkable — fingerprint matches
+  cohort_calendar:
+-   last_confirmed: 2026-08-05
++   last_confirmed: 2026-08-21   # same
+```
+
+---
+
+## 2026-08-21 — pipeline
+
+`refresh-context.yml`. 7 checked — 2 unchanged, 0 changed, 0 missing, 5 skipped by design.
+
+Unchanged: `h2_planning`, `cohort_calendar`.
+
+Skipped by design: `product_backlog`, `team_chat`, `product_ui`, `cohort_scheduling_flow`, `vendor_video_sla`.
+
+Nothing moved. Every cached copy still matches its source.
+
+## 2026-08-21 — pipeline
+
+`refresh-context.yml`. 7 checked — 1 unchanged, 1 changed, 0 missing, 5 skipped by design.
+
+**CHANGED** — `h2_planning`
+4341 → 4324 bytes (-0.4%). sha256 292b7877… → 45dfc6ba….
+`team/_generated/h2-planning.md` was generated from the older version — run `/refresh-index` to judge
+whether anything the summary asserts is now wrong.
+
+Unchanged: `cohort_calendar`.
+
+Skipped by design: `product_backlog`, `team_chat`, `product_ui`, `cohort_scheduling_flow`, `vendor_video_sla`.
+
+## 2026-08-20 — /refresh-index (regenerate)
+
+The pipeline run just above failed on the missing `ANTHROPIC_API_KEY` before it fetched
+anything. Per the new "Regenerate what's missing or stale" step, stood in for it: fetched
+both stale `summarize_to` targets directly and summarized them against the same rules in
+`refresh-context.mjs`'s `PROMPT` constant.
+
+```
+REFRESHED    h2_planning       → team/_generated/h2-planning.md (4341 chars in, 3781 out)
+REFRESHED    cohort_calendar   → team/_generated/cohort-calendar.md (1129 chars in, 1967 out)
+```
+
+Both files carry a banner naming `/refresh-index` as the author, not the automated
+pipeline — the key still isn't set, and claiming otherwise would be exactly the kind of
+silent gap this file exists to catch. `last_confirmed` on both entries is still not
+bumped: this closes the "no copy exists" finding, not the "is reachable: true still
+true" one, and those stay two separate questions per the skill's own rule.
+
+---
+
+## 2026-08-20 — pipeline
+
+`refresh-context.yml`. 0 refreshed, 1 failed, 5 skipped by design.
+
+```
+FAILED       ANTHROPIC_API_KEY       not set in the repo secrets, so nothing can be summarized.
+SKIPPED      product_backlog         no copy in this repo, read the source
+SKIPPED      team_chat               no copy in this repo, read the source
+SKIPPED      product_ui              no copy in this repo, read the source
+SKIPPED      cohort_scheduling_flow  no copy in this repo, read the source
+SKIPPED      vendor_video_sla        a person maintains insights/vendor-video-sla-2026-q3.md
+```
+
+The failure above is the finding. Nothing else in this run needs reading.
+
+## 2026-08-20 — /refresh-index
+
+7 sources checked — 4 confirmed, 0 drifted, 1 unreachable, 2 unknown.
+
+**CONFIRMED** — `product_backlog`
+Jira SCRUM resolves ("Learn.This Webapp Team", project id 10000). `jira` in
+`available_connections`. Spot-checked recent issues (SCRUM-10 through SCRUM-17) — live.
+
+**CONFIRMED** — `team_chat`
+`#demo-learn-this` resolves (private channel, created 2026-08-05, id C0BN16U371T). `slack`
+in `available_connections`. Note for next time: this tooling's default channel search is
+public-only — a plain search for the name returns nothing unless `private_channel` is
+included in scope. Not drift, just a gotcha worth writing down so it doesn't get misread
+as UNREACHABLE next run.
+
+**CONFIRMED** — `product_ui`
+Figma file resolves. Still one page in the document ("01 · Home", node 8:2), consistent
+with the 08-16 correction applied to the manifest notes on 08-19. No modified date exposed
+— same limitation as every run.
+
+**UNREACHABLE** — `cohort_scheduling_flow`
+`reachable: true` claimed, still isn't. Same finding as 08-19, unchanged: the file has
+exactly one page, "01 · Home" — no page or frame named "Cohort scheduling" exists anywhere
+in the document. Second consecutive run with this result. Still needs a person (Ines) to
+either restore the page or repoint the entry — not something a third check will resolve.
+
+**UNKNOWN** — `h2_planning`
+Cached. Doc resolves (307 → 200 on follow), no Last-Modified header exposed.
+`summarize_to`'s target (`team/_generated/h2-planning.md`) still does not exist. The
+08-19 pipeline fix (`4a2f99b`) hasn't actually run yet — this log carries zero `—
+pipeline` entries. Not bumping `last_confirmed`; a resolves-check isn't a copy-match
+check with nothing to compare against.
+
+**UNKNOWN** — `cohort_calendar`
+Same shape as `h2_planning`: resolves, no date exposed, `team/_generated/cohort-calendar.md`
+still missing, same root cause (pipeline hasn't run since the fix).
+
+**CONFIRMED** — `vendor_video_sla`
+Deliberately unreachable (no API, SSO only) — correct, unchanged. Workaround on schedule:
+`insights/vendor-video-sla-2026-q3.md` covers Q3 2026 through Aug 4; next export due first
+week of October.
+
+Proposed edits (not applied):
+```diff
+  product_backlog:
+-   last_confirmed: 2026-08-16
++   last_confirmed: 2026-08-20
+  team_chat:
+-   last_confirmed: 2026-08-19
++   last_confirmed: 2026-08-20
++   reachability_note: ...append: "channel search defaults to public_channel only; include
++   private_channel in scope or a private channel search returns a false negative."
+  product_ui:
+-   last_confirmed: 2026-08-16
++   last_confirmed: 2026-08-20
+  vendor_video_sla:
+-   last_confirmed: 2026-08-04
++   last_confirmed: 2026-08-20
+  cohort_scheduling_flow:    # no bump — still broken, second consecutive run
+  h2_planning:               # no bump — no copy to check against
+  cohort_calendar:           # no bump — no copy to check against
+```
+
+---
+
+## 2026-08-19 — /refresh-index
+
+Seven sources (down from the prior run's seven — `instructor_nps` and `contract_terms`
+were retired from the manifest on 2026-08-19, so this run checks `product_backlog`,
+`team_chat`, `product_ui`, `cohort_scheduling_flow`, `h2_planning`, `cohort_calendar`,
+`vendor_video_sla`).
+
+```
+CONFIRMED    product_backlog        Jira SCRUM resolves ("Learn.This Webapp Team",
+                                     project id 10000). jira in available_connections.
+CONFIRMED    team_chat               #demo-learn-this resolves (private channel,
+                                     created 2026-08-05). slack in available_connections.
+CONFIRMED    product_ui              Figma file resolves. Frame names confirmed in both
+                                     shapes the notes now describe: three-segment
+                                     (`Home / desktop / logged-out`) and four-segment with
+                                     a condition (`Home / desktop / logged-out / sold-out`).
+                                     The 08-16 correction holds.
+UNREACHABLE  cohort_scheduling_flow  reachable: true claimed, but isn't. The file has
+                                     exactly one page — `01 · Home` (node 8:2). No page
+                                     or frame named "Cohort scheduling" exists anywhere
+                                     in the document; searched the full metadata tree for
+                                     "cohort" and "schedul" and found only copy text
+                                     ("Live cohorts...", "Nothing scheduled") inside Home
+                                     frames, not a distinct flow. Either the page was
+                                     removed/renamed in Figma, or this entry was never
+                                     pointed at a real page. Not a naming nuance — a
+                                     person needs to check with Ines.
+UNKNOWN      h2_planning             Cached. Doc still resolves (fetch redirects 307,
+                                     200 on follow), but the export endpoint exposes no
+                                     Last-Modified header — same limitation product_ui
+                                     already carries, undocumented here. Separately, and
+                                     more importantly: summarize_to's target,
+                                     team/_generated/h2-planning.md, still does not exist.
+                                     Same open finding as 08-16 — the pipeline has not run
+                                     since. Not bumping last_confirmed, per that run's
+                                     rule: a resolves-check isn't a copy-match check when
+                                     there is no copy to check.
+UNKNOWN      cohort_calendar         Same as h2_planning: resolves, no date exposed,
+                                     team/_generated/cohort-calendar.md still missing.
+CONFIRMED    vendor_video_sla        Not reachable, deliberately (no API, SSO only). The
+                                     workaround happened and is on schedule:
+                                     insights/vendor-video-sla-2026-q3.md covers Q3
+                                     2026, explicitly partial "through Aug 4," next export
+                                     "first week of October." Nothing due yet.
+```
+
+**Three findings, in the order they matter.**
+
+**1. `cohort_scheduling_flow` is broken, not just stale.** This is new since 08-16 — that
+run didn't check it (it wasn't in the seven it listed) or it passed unremarked; either way
+it fails today. `/states-table` reads this entry to resolve one Figma page, and the page
+isn't there. Worth a message to Ines before anyone runs that skill against it.
+
+**2. The `summarize_to` gap from 08-16 is still open.** `h2_planning` and
+`cohort_calendar` still have no file under `team/_generated/`. Three weeks since the
+prior check flagged it as "the one worth acting on." Still no `ANTHROPIC_API_KEY` in repo
+secrets, still no pipeline run — nothing in `refresh-log.md` shows a `— pipeline` entry
+since this log started. Repeating the 08-16 recommendation: either run the pipeline by
+hand (`node .github/scripts/refresh-context.mjs`) or edit the manifest to admit the
+generated layer doesn't exist yet.
+
+**3. `product_ui`'s 08-16 correction held.** The frame-naming note (three-segment and
+four-segment forms) matches what's actually in the file today. Confirms the prior fix,
+nothing more to do there.
+
+**Proposed, not applied.**
+
+```diff
+   product_backlog:
+-    last_confirmed: 2026-08-16
++    last_confirmed: 2026-08-19
+
+   product_ui:
+-    last_confirmed: 2026-08-16
++    last_confirmed: 2026-08-19
+
+   cohort_scheduling_flow:
+-    reachable: true # via Figma MCP
++    reachable: false # page "Cohort scheduling" does not exist in the file — checked 2026-08-19
+     last_confirmed: 2026-08-05
++    # last_confirmed intentionally not bumped — this is the date it was last known good,
++    # not the date it was last checked.
+```
+
+`h2_planning` / `cohort_calendar`: no diff proposed. Same reasoning as 08-16 — the
+`summarize_to` gap isn't a `last_confirmed` question, it's a pipeline question.
+`vendor_video_sla`: no diff proposed — `last_confirmed` already matches the export's own
+"through Aug 4" date; nothing new happened to confirm.
 
 ---
 

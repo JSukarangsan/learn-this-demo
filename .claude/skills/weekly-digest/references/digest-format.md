@@ -33,6 +33,22 @@ this says what to write.
 **Empty sections get omitted, not filled.** A three-line digest that's true beats a
 five-line one with a padded Blocked section.
 
+## Posting to Slack
+
+The status file and the Slack post are the same content — not a second draft. Convert the
+template's markdown to Slack's when posting, don't repost the raw template:
+
+- `**bold**` → `*bold*` (Slack bold is a single asterisk)
+- `- ` bullets → `• ` bullets
+- Section headers (`**Decided**`, etc.) stay as the section names — this audience already
+  reads this channel and knows what they mean, unlike the cross-team notification in
+  `/weekly-digest-expanded`, which spells them out for a reader who hasn't opened a digest
+  before.
+
+Post the whole digest, not a summary of it — this is the update, not a teaser pointing at
+one. If a section is empty it's already omitted per the table above; don't add a line
+noting that it's empty.
+
 ## Rules
 
 - **House voice from `CLAUDE.md`.** "Learner," never "student" or "user." "Instructor,"

@@ -36,7 +36,8 @@ projects/         one folder per piece of work in flight
   search-relevance/             scoped — requirements only
   video-playback-v2/            not started — CLAUDE.md and status
 
-.claude/skills/   /build-update · /weekly-digest · /states-table · /refresh-index
+.claude/skills/   /build-update · /weekly-digest · /weekly-digest-expanded
+                  /states-table · /release-notes · /refresh-index
 ```
 
 **The four projects don't look alike, and that's deliberate.** A folder appears when there

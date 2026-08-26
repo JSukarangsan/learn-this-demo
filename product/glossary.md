@@ -3,6 +3,12 @@
 Product terms. **Metric definitions are in `../insights/definitions.md`** — if a term has
 a number attached, it belongs there, not here.
 
+**Half of these terms are not ours.** Instructor Tools owns *assignment* and *course*;
+Billing owns *seat*. Their definitions change without telling us, so this file is a copy
+we reconcile, not a document we own — see `shared_product_terms` in
+`../context-manifest.yaml`. What *is* ours is the last line of each entry: the thing people
+on this team get wrong. Keep that when you update one.
+
 **Cohort** — one scheduled run of a course, with a fixed start date and a fixed roster.
 A course can have many cohorts. This was not always true; see
 `decisions/2026-03-12-multiple-cohorts-per-course.md`.
