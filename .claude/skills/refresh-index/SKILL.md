@@ -71,37 +71,59 @@ either a different address or a person on a cadence.
 
 `check.mjs` is a plain Node script with no credentials and no MCP access. A source marked
 `fetch_via:` — Glean, or any other connector — is reported as **needing you** rather than
-skipped, along with the existing fingerprint to compare against.
+skipped, along with the version the copy was built from, so you can compare.
 
-For each one: **retrieve the document through that connector yourself**, then compute its
-fingerprint the same way the gate will:
+For each one: **retrieve the document through that connector yourself.** Then record
+**the modification time the connector reports**, not a hash of what it returned:
 
-```sh
-node .claude/skills/refresh-index/check.mjs --hash   # reads the content on stdin
+```
+Source updated: 2023-10-24T01:04:20Z (via glean)
 ```
 
-Never hand-compute it, and never use `shasum` — see `references/summary-format.md` for why
-those disagree.
+**Do not hash a connector's output, even though `--hash` exists.** Tested against Glean on
+2026-08-25, and the payload is not the document — it is Tika-rendered HTML carrying parser
+metadata (a LibreOffice build string among it), every comment on the document with its
+timestamps, and a `percentRetrieved` that changes when you page. All three move without the
+document moving, so a hash would report `CHANGED` for a new comment or a Glean infra
+upgrade. The modification time is the source system's own and does not.
 
-**Then the important part, and say it in the log rather than burying it.** A connector
-returns *its index* of the document, not the document. Glean crawls on its own schedule, so
-a matching fingerprint proves only that **the index has not changed** — not that the source
-hasn't. A document edited an hour ago can look `UNCHANGED` because the crawler has not
-caught up yet.
+`--hash` is for content you fetched **directly** over HTTP, where there is no date to be
+had. That is the only case it is right for.
 
-That is a genuinely weaker guarantee than a direct fetch, and it fails in the dangerous
-direction: it says the copy is current when it may not be. Two consequences worth carrying:
+### What a connector's date does and does not prove
 
-- **Never report a `fetch_via` source as confirmed-current without the caveat.** "Unchanged
-  as far as the index knows" is the honest phrasing.
+A connector indexes other systems, so everything it tells you is second-hand. Be precise
+about which part is trustworthy, because it is not all-or-nothing.
+
+**The date is a real passthrough.** Observed on Glean, 2026-08-25: a document last edited
+in 2023 still reports `2023-10-24`, and Glean has certainly re-crawled it many times since.
+A crawl timestamp could not stay at 2023. So `updateTime` is the source system's own
+modification time, not the index's.
+
+**But two gaps sit between that date and the copy you write**, and only the first is
+usually mentioned:
+
+1. **Crawl lag.** The document is edited; the index catches up later. Until it does, the
+   date you read is the *previously indexed* modification time.
+2. **Metadata and content may not sync together.** The date and the body are two fields of
+   the connector's record. If metadata refreshes ahead of content, a source can report a
+   fresh edit while still serving the previous crawl's text — a `CHANGED` signal pointing
+   at stale content to summarize.
+
+**Neither gap has been measured**, and neither is visible from a single read. Treat the
+size of both as unknown until somebody times them.
+
+So: **`fetch_via` is a weaker class of check, not an equivalent one.** It fails in the
+dangerous direction — saying a copy is current when it may not be. Three consequences:
+
+- **Never report a `fetch_via` source as confirmed-current.** "Unchanged as far as the
+  index knows, source last modified {date}" is the honest phrasing, and the difference
+  matters.
 - **Anything a team ships against — a compliance rule, a legal constraint, a hard number —
-  gets checked against the real document by a person**, not against the index and not by
-  this skill.
-
-Hashing is the mechanism because **dating is impossible here** — these sources expose no
-`Last-Modified`, no `ETag` and no `Content-Length`. That's why every run before this one
-reported `UNKNOWN` forever, and why a confident `CONFIRMED` on a source you can't date was
-never available in the first place.
+  gets checked against the real document by a person.**
+- **If the date moved, re-read before summarizing, and say if the body looks inconsistent
+  with it.** A fresh date over apparently unchanged text is gap 2 showing itself, and it is
+  worth writing down rather than shrugging at.
 
 ### 3. Judge what moved, then write the minimum
 

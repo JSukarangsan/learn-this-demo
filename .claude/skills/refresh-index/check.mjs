@@ -16,11 +16,19 @@
 // only thing that ever needed one was summarizing, and summarizing belongs to whoever
 // invoked the skill.
 //
-// The change signal is a content hash, not a timestamp, and that is not a preference. The
-// Google export endpoints these sources use return no Last-Modified, no ETag and no
-// Content-Length, so there is nothing to compare a date against — which is why every run
-// before fingerprints existed reported UNKNOWN forever. The bodies are byte-stable, so a
-// SHA-256 of the body answers definitively what a date cannot.
+// THE CHANGE SIGNAL DEPENDS ON WHAT THE SOURCE CAN TELL YOU, and there are two answers.
+//
+//   Fetched directly (`fetch:`)  -> a content hash. The Google export endpoints return no
+//   Last-Modified, no ETag and no Content-Length, so there is no date to compare against —
+//   which is why every run before fingerprints existed reported UNKNOWN forever. Their
+//   bodies are byte-stable, so a SHA-256 answers definitively what a date cannot.
+//
+//   Reached through a connector (`fetch_via:`) -> the modification time it reports.
+//   Verified against Glean on 2026-08-25. Hashing a connector's output would be wrong:
+//   Glean returns Tika-rendered HTML carrying parser metadata (a LibreOffice version
+//   string among it), every comment on the document with timestamps, and a
+//   percentRetrieved that changes with paging. All of that moves without the document
+//   moving. The date it reports is the source system's own, and it does not.
 //
 // Deliberately not fetched:
 //   - refresh: live        — pulled at query time, never cached
@@ -61,6 +69,14 @@ const GENERATED_ROOT = 'team/_generated/'
 // mechanism keeps. It lives in the file it describes rather than a sidecar: nothing can
 // desync from it, and deleting a generated file correctly forces a regenerate.
 const FINGERPRINT = /Source fingerprint: sha256:([0-9a-f]{64}) \((\d+) bytes\)/
+
+// The other kind of provenance, for sources reached through a connector rather than
+// fetched directly. Tested against Glean on 2026-08-25: it reports the source system's
+// real modification time, and hashing what it returns instead would be actively wrong —
+// its payload carries Tika parser metadata (including a LibreOffice version string), every
+// comment on the document with timestamps, and a percentRetrieved that changes with paging.
+// All three move without the document moving. A date does not.
+const UPDATED = /Source updated: (\d{4}-\d{2}-\d{2}(?:T[\d:.]+Z?)?)/
 
 // How long a person-maintained copy may go unconfirmed before the export is overdue.
 // `as-needed` has no schedule, so it can never be late.
@@ -184,6 +200,14 @@ export function readFingerprint(path, io = { readFileSync, existsSync }) {
   return { sha: match[1], bytes: Number(match[2]) }
 }
 
+// The connector equivalent. Returns the modification time the copy was generated from, so
+// the skill can compare it against what the connector reports now.
+export function readUpdated(path, io = { readFileSync, existsSync }) {
+  if (!io.existsSync(path)) return null
+  const match = io.readFileSync(path, 'utf8').match(UPDATED)
+  return match ? match[1] : null
+}
+
 // ---------------------------------------------------------------------------
 // Is a hand-maintained export overdue?
 //
@@ -284,7 +308,7 @@ export async function check({ manifestPath, today } = {}) {
         name,
         file: src.summarize_to,
         via: src.fetch_via,
-        prior: readFingerprint(at(src.summarize_to)),
+        priorUpdated: readUpdated(at(src.summarize_to)),
       })
       continue
     }
@@ -348,7 +372,7 @@ export async function check({ manifestPath, today } = {}) {
       ? `\nMissing:\n  ${missing.map((r) => `${r.name} — ${r.file} ${r.why}. Source is ${r.nowBytes} bytes, sha256 ${r.nowSha.slice(0, 8)}…`).join('\n  ')}`
       : '',
     manual.length
-      ? `Needs the skill to fetch it:\n  ${manual.map((r) => `${r.name} — reachable only via ${r.via}, which this script cannot call. ${r.prior ? `Existing fingerprint sha256 ${r.prior.sha.slice(0,8)}… — compare against it.` : 'No fingerprint yet — first pass.'} → ${r.file}`).join('\n  ')}`
+      ? `Needs the skill to fetch it:\n  ${manual.map((r) => `${r.name} — reachable only via ${r.via}, which this script cannot call. ${r.priorUpdated ? `Copy was generated from the version modified ${r.priorUpdated} — compare that against what ${r.via} reports now.` : 'No recorded version yet — first pass.'} → ${r.file}`).join('\n  ')}`
       : '',
     unstable.length
       ? `Unstable:\n  ${unstable.map((r) => `${r.name} — two fetches disagreed (${r.firstBytes} vs ${r.secondBytes} bytes, ${r.first.slice(0,8)}… vs ${r.second.slice(0,8)}…). No fingerprint written; this source cannot be checked by hash.`).join('\n  ')}`
